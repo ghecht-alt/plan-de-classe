@@ -856,6 +856,27 @@
   .bi-tab td.bi-sc{width:58px;text-align:right;color:var(--blue);font-weight:800;white-space:nowrap;}
   .bilan-para{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:10px 12px;}
   .bilan-para h4{margin:0 0 6px;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--blue);}
+  /* Vacances scolaires dans l'emploi du temps */
+  .vac-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;}
+  .vac-g{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+  .vac-bar label{margin:0;font-size:.74rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+  .vac-bar select{width:auto;min-width:78px;border:1.6px solid var(--line);border-radius:9px;padding:7px 9px;font:inherit;font-size:.85rem;background:#fff;color:var(--ink);min-height:40px;}
+  .vac-bar #vacMaj{flex:none;}
+  .vac-opt{display:flex;align-items:flex-start;gap:8px;font-size:.82rem;line-height:1.3;margin:6px 0 10px;font-weight:600;color:var(--ink-2);}
+  .vac-opt input{margin-top:2px;width:18px;height:18px;flex:none;}
+  .vac-l{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--amber);
+    border-radius:0 8px 8px 0;padding:7px 10px;margin-bottom:6px;font-size:.84rem;}
+  .vac-l .vac-tete{display:flex;align-items:center;gap:8px;}
+  .vac-l .vac-tete b{flex:1;}
+  .vac-l .vac-dates{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px;}
+  .vac-l input[type="date"]{flex:1;min-width:130px;max-width:170px;border:1.6px solid var(--line);border-radius:8px;padding:5px 7px;font:inherit;font-size:.8rem;}
+  .vac-l .vac-info{display:block;margin-top:3px;}
+  .vac-l .sup{flex:none;border:1.6px solid #e7c9c9;background:#fff;color:var(--red);border-radius:8px;min-width:34px;height:34px;font-weight:800;}
+  .vac-l.encours{border-left-color:var(--red);background:#fdf1ec;}
+  .vac-fer{margin-top:8px;font-size:.82rem;}
+  .vac-fer summary{cursor:pointer;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-size:.76rem;}
+  .vac-fer .f{display:inline-block;background:#eef3f7;border:1px solid #d3dee6;border-radius:7px;padding:2px 7px;margin:3px 4px 0 0;}
+  @media (pointer:coarse){ .vac-l .sup{min-width:42px;height:42px;} }
   .dash-cl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
   .dash-cl label{font-size:.78rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
   .dash-cl select{flex:1;min-width:160px;max-width:260px;border:1.6px solid var(--line);border-radius:9px;
@@ -923,8 +944,6 @@
   <button class="iconbtn" id="btnDashboard" title="Climat des îlots et regard transversal sur toutes les matières">📊 Tableau de bord</button>
   <button class="iconbtn" id="btnExport">📤 Bilans et exports</button>
   <button class="iconbtn" id="btnRefs">📚 Listes et référentiels</button>
-  <hr>
-  <button class="iconbtn" id="btnEchanges" title="Échanges d'heures entre collègues, sorties et voyages (page Échanges d'heures et sorties)">🔁 Échanges d'heures et sorties</button>
 </div>
 
 <div class="banner warn hidden" id="reconnect">⚠️ Session Google expirée - vos saisies restent en local.
@@ -1276,6 +1295,23 @@
         <div><label>… cette semaine est</label><select id="calageParity"><option value="paire">paire</option><option value="impaire">impaire</option></select></div>
       </div>
       <p class="hint">L'alternance paire/impaire de l'établissement ne suit pas toujours le n° de semaine : ce calage fixe le repère, l'app alterne ensuite seule.</p>
+
+      <div class="secttl" style="margin-top:14px">🏖️ Vacances scolaires et jours fériés</div>
+      <div class="vac-bar">
+        <span class="vac-g"><label for="vacZone">Zone</label><select id="vacZone"><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></span>
+        <span class="vac-g"><label for="vacAnnee">Année</label><select id="vacAnnee"></select></span>
+        <button class="admbtn ok" id="vacMaj">⟳ Récupérer les dates officielles</button>
+      </div>
+      <p class="hint" id="vacEtat"></p>
+      <label class="vac-opt"><input type="checkbox" id="vacSauter"> Les semaines de vacances ne comptent pas dans l'alternance paire/impaire (à la reprise, on repart là où l'on s'était arrêté)</label>
+      <div id="vacListe"></div>
+      <div class="admadd" style="margin-top:6px">
+        <input type="text" id="vacNom" placeholder="Ex. Vacances de printemps" style="max-width:200px" autocomplete="off">
+        <input type="date" id="vacDu" style="max-width:150px"><input type="date" id="vacAu" style="max-width:150px">
+        <button class="admbtn ok" id="vacAdd">＋ Ajouter</button>
+      </div>
+      <details class="vac-fer"><summary id="vacFerSum">Jours fériés</summary><div id="vacFeries"></div></details>
+
       <div class="actions"><button class="primary" id="edtAutoSelect">Sélectionner la classe du créneau maintenant</button></div>
     </div>
   </div>
@@ -2988,20 +3024,32 @@
   /* ---------- Emploi du temps : semaine paire/impaire ---------- */
   // calage: { refMondayISO:'YYYY-MM-DD', refParity:'paire'|'impaire' }
   function mondayOf(d) { var x = new Date(d); var day = (x.getDay() + 6) % 7; x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - day); return x; }
-  function weekParity(calage, when) {
+  /* opts.semaineSansCours(lundi) : si fourni, les semaines entièrement en vacances ne comptent
+     pas dans l'alternance - à la reprise, on repart là où l'on s'était arrêté. */
+  function weekParity(calage, when, opts) {
     if (!calage || !calage.refMondayISO) return "paire";
     var ref = mondayOf(new Date(calage.refMondayISO + "T00:00:00"));
     var cur = mondayOf(when || new Date());
-    var weeks = Math.round((cur - ref) / (7 * 86400000));
+    var weeks;
+    if (opts && typeof opts.semaineSansCours === "function") {
+      var a = (ref <= cur) ? ref : cur, b = (ref <= cur) ? cur : ref, n = 0, k = new Date(a), garde = 0;
+      while (k < b && garde++ < 600) {
+        if (!opts.semaineSansCours(k)) n++;
+        k.setDate(k.getDate() + 7);
+      }
+      weeks = n;
+    } else {
+      weeks = Math.abs(Math.round((cur - ref) / (7 * 86400000)));
+    }
     var even = (weeks % 2 === 0);
     var refEven = (calage.refParity || "paire") === "paire";
     var isEven = even ? refEven : !refEven;
     return isEven ? "paire" : "impaire";
   }
   // edt: { paire:{ "1":{ "08:15":classId,... } }, impaire:{...} }  (1=lundi..7=dimanche)
-  function classNow(edt, calage, when) {
+  function classNow(edt, calage, when, opts) {
     when = when || new Date();
-    var par = weekParity(calage, when);
+    var par = weekParity(calage, when, opts);
     var day = ((when.getDay() + 6) % 7) + 1;
     var mins = when.getHours() * 60 + when.getMinutes();
     var grid = (edt && edt[par] && edt[par][day]) || {};
@@ -3808,7 +3856,7 @@
   var KEY_DERNIERENVOI = "pdc_dernierenvoi";
   /* Repère de version : permet de vérifier d'un coup d'œil que deux postes font tourner
      le même programme (⚙︎ Classe, en bas du bloc Drive). */
-  var APP_VERSION = "2026-10-04-b";
+  var APP_VERSION = "2026-10-22";
   var saveTimer = null, dirty = false;
   function marquerNonEnvoye(v) { dirty = !!v; LS.setRaw(KEY_NONENVOYE, v ? "1" : ""); }
   function relireNonEnvoye() { dirty = (LS.raw(KEY_NONENVOYE) === "1"); }
@@ -4044,6 +4092,17 @@
     var r = Object.assign({}, a || {});
     Object.keys(b || {}).forEach(function (k) {
       var va = r[k], vb = b[k];
+      /* Le calendrier scolaire est un tout cohérent (zone + périodes) : on garde la version la
+         plus récente, jamais un mélange des deux - un poste resté en arrière ne doit pas
+         réinstaller d'anciennes vacances. */
+      if (k === "calendrier") {
+        var ma = (va && va.maj) || 0, mb = (vb && vb.maj) || 0;
+        if (!va) { r[k] = vb; return; }
+        if (!vb) return;
+        if (mb > ma) { r[k] = vb; return; }
+        if (mb === ma && (vb.vacances || []).length > (va.vacances || []).length) { r[k] = vb; return; }
+        return;
+      }
       if (Array.isArray(va) && Array.isArray(vb)) {
         // listes d'objets identifiés (k/id) ou listes de textes
         if (vb.length && typeof vb[0] === "object") {
@@ -5097,7 +5156,7 @@
      Sans créneau reconnu, la journée entière fait office de séance. */
   function seanceDeTs(cid, ts) {
     var m = mat(), d = new Date(ts);
-    var par = D.weekParity(m.calage, d);
+    var par = parite(m.calage, d);
     var jour = ((d.getDay() + 6) % 7) + 1;
     var mins = d.getHours() * 60 + d.getMinutes();
     var grille = (m.edt && m.edt[par] && m.edt[par][jour]) || {};
@@ -5260,7 +5319,8 @@
     semaines = semaines || 8;
     for (var recul = 0; recul <= semaines * 7; recul++) {
       var jour = new Date(today.getTime() - recul * 86400000);
-      var par = D.weekParity(m.calage, jour);
+      if (horsCours(dateLocaleISO(jour))) continue;        // jamais de séance pendant les vacances
+      var par = parite(m.calage, jour);
       var dayIdx = ((jour.getDay() + 6) % 7) + 1;
       var grille = (m.edt && m.edt[par] && m.edt[par][dayIdx]) || {};
       Object.keys(grille).sort().forEach(function (debut) {
@@ -5340,6 +5400,13 @@
     if (creneauCoherent(cid)) { marquerSeanceDuCours(cid); majBandeauSaisie(); if (apres) apres(); return; }
     var liste = seancesPossibles(cid, 8);
     if (!liste.length) { majBandeauSaisie(); if (apres) apres(); return; }   // pas d'emploi du temps : on ne gêne pas
+    var hcS = horsCours(dateLocaleISO(new Date()));
+    if (hcS && !confirm("Nous sommes en " + hcS.nom.toLowerCase() + " : il n'y a pas cours aujourd'hui.\n\n"
+      + "OK : choisir la séance concernée dans le calendrier de cette classe (recommandé).\n"
+      + "Annuler : enregistrer quand même à la date d'aujourd'hui.")) {
+      majBandeauSaisie(); if (apres) apres(); return;
+    }
+    if (hcS) { ouvrirCalendrierSeance(cid, apres); return; }
     if (!confirm("Vous saisissez pour " + state.classes[cid].nom + ", mais ce créneau n'est pas le sien.\n\n"
       + "OK : choisir la séance concernée dans le calendrier de cette classe.\n"
       + "Annuler : enregistrer quand même à la date et à l'heure actuelles.")) {
@@ -5410,10 +5477,188 @@
     $("btnSeance").innerHTML = cidH ? ("📅 " + libelleCourtSeance(cleDe(seanceActive(cidH)))) : "📅 Séance";
     try { renderSalleBadge(); } catch (e) { /* jamais bloquant */ }
     try { majBoutonJournal(); } catch (e) { /* jamais bloquant */ }
-    var par = D.weekParity(m.calage, new Date());
+    var par = parite(m.calage, new Date());
     $("weekBadge").dataset.p = par;
     majHorloge(par);
     updateDriveBadge();
+  }
+
+  /* ====================== CALENDRIER SCOLAIRE ======================
+     Un cours n'a pas lieu pendant les vacances : pas de bascule automatique de classe, pas de
+     fenêtre de début de cours, pas de séance proposée à la saisie, et l'alternance paire/impaire
+     repart où elle s'était arrêtée. Les dates de vacances se récupèrent en un clic auprès du
+     ministère (data.education.gouv.fr, données ouvertes) ; les jours fériés, eux, se calculent
+     sans réseau et sont donc toujours justes. Tout reste corrigeable à la main. */
+  var ZONES = ["A", "B", "C"];
+  function anneeScolaireDe(iso) {
+    var y = +String(iso).slice(0, 4), m = +String(iso).slice(5, 7);
+    var debut = (m >= 9) ? y : y - 1;
+    return debut + "-" + (debut + 1);
+  }
+  function anneesProposees() {
+    var a = +anneeScolaireDe(dateLocaleISO(new Date())).slice(0, 4), out = [];
+    for (var k = -1; k <= 2; k++) out.push((a + k) + "-" + (a + k + 1));
+    return out;
+  }
+  function calendrier() {
+    if (!state) return { zone: "B", vacances: [], feries: [], sauterVacances: true, annee: "" };
+    if (!state.refs) state.refs = {};
+    var c = state.refs.calendrier;
+    if (!c) { c = state.refs.calendrier = {}; }
+    if (ZONES.indexOf(c.zone) < 0) c.zone = "B";              // zone B par défaut (académie de Nantes)
+    if (!c.annee) c.annee = anneeScolaireDe(dateLocaleISO(new Date()));
+    if (!Array.isArray(c.vacances)) c.vacances = [];
+    if (!Array.isArray(c.feries) || !c.feries.length) c.feries = feriesCalcules(c.annee);
+    if (c.sauterVacances === undefined) c.sauterVacances = true;
+    return c;
+  }
+  /* Pâques : algorithme de Gauss/Butcher. Les trois fériés mobiles en découlent. */
+  function paques(an) {
+    var a = an % 19, b = Math.floor(an / 100), c = an % 100;
+    var d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+    var g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+    var i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7;
+    var m2 = Math.floor((a + 11 * h + 22 * l) / 451);
+    var mois = Math.floor((h + l - 7 * m2 + 114) / 31), jour = ((h + l - 7 * m2 + 114) % 31) + 1;
+    return new Date(an, mois - 1, jour);
+  }
+  function feriesAnnee(an) {
+    var p2 = paques(an);
+    var plus = function (n) { var d = new Date(p2); d.setDate(d.getDate() + n); return dateLocaleISO(d); };
+    var dd = function (mm, jj) { return an + "-" + String(mm).padStart(2, "0") + "-" + String(jj).padStart(2, "0"); };
+    return [
+      { nom: "Jour de l'an", d: dd(1, 1) },
+      { nom: "Lundi de Pâques", d: plus(1) },
+      { nom: "Fête du Travail", d: dd(5, 1) },
+      { nom: "Victoire 1945", d: dd(5, 8) },
+      { nom: "Ascension", d: plus(39) },
+      { nom: "Lundi de Pentecôte", d: plus(50) },
+      { nom: "Fête nationale", d: dd(7, 14) },
+      { nom: "Assomption", d: dd(8, 15) },
+      { nom: "Toussaint", d: dd(11, 1) },
+      { nom: "Armistice 1918", d: dd(11, 11) },
+      { nom: "Noël", d: dd(12, 25) }
+    ];
+  }
+  function feriesCalcules(annee) {
+    var y1 = +String(annee).slice(0, 4);
+    return feriesAnnee(y1).concat(feriesAnnee(y1 + 1))
+      .filter(function (f) { return f.d >= y1 + "-09-01" && f.d <= (y1 + 1) + "-08-31"; })
+      .sort(function (a, b) { return a.d < b.d ? -1 : 1; });
+  }
+  /* Jour sans cours ? Retourne le motif, ou null si la journée est travaillée.
+     Les samedis et dimanches ne sont pas traités ici : l'emploi du temps s'en charge. */
+  function horsCours(iso) {
+    if (!state || !state.refs) return null;
+    var c = calendrier(), i, v;
+    for (i = 0; i < c.feries.length; i++) if (c.feries[i].d === iso) return { type: "ferie", nom: c.feries[i].nom };
+    for (i = 0; i < c.vacances.length; i++) {
+      v = c.vacances[i];
+      if (v && v.du && v.au && v.du <= iso && iso <= v.au) return { type: "vacances", nom: v.nom || "Vacances", du: v.du, au: v.au };
+    }
+    return null;
+  }
+  function motifHorsCours(iso) { var h = horsCours(iso); return h ? h.nom : ""; }
+  /* Une semaine entièrement sans cours (du lundi au vendredi) ne compte pas dans l'alternance. */
+  var _cacheSem = { stamp: "", map: {} };
+  function calStamp() {
+    var c = calendrier();
+    return c.zone + "|" + c.annee + "|" + c.vacances.length + "|" + c.feries.length + "|" + (c.maj || 0) + "|" + (c.sauterVacances ? 1 : 0)
+      + "|" + c.vacances.map(function (v) { return v.du + ">" + v.au; }).join(",");
+  }
+  function semaineSansCours(lundi) {
+    var st = calStamp();
+    if (_cacheSem.stamp !== st) { _cacheSem = { stamp: st, map: {} }; }
+    var cle = dateLocaleISO(lundi);
+    if (_cacheSem.map[cle] !== undefined) return _cacheSem.map[cle];
+    var sansCours = true;
+    for (var k = 0; k < 5 && sansCours; k++) {
+      var d = new Date(lundi); d.setDate(d.getDate() + k);
+      if (!horsCours(dateLocaleISO(d))) sansCours = false;
+    }
+    _cacheSem.map[cle] = sansCours;
+    return sansCours;
+  }
+  /* Parité de la semaine, en tenant compte du réglage « les vacances ne comptent pas ». */
+  function parite(calage, quand) {
+    var c = calendrier();
+    if (!c.sauterVacances || !c.vacances.length) return D.weekParity(calage, quand);
+    return D.weekParity(calage, quand, { semaineSansCours: semaineSansCours });
+  }
+  /* Récupération des dates officielles auprès du ministère (données ouvertes).
+     Le format de réponse est lu de façon tolérante : l'API a déjà changé de version une fois. */
+  function isoDe(v) {
+    if (!v) return "";
+    var s2 = String(v);
+    return /^\d{4}-\d{2}-\d{2}/.test(s2) ? s2.slice(0, 10) : "";
+  }
+  function jourAvant(iso) {
+    var d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() - 1);
+    return dateLocaleISO(d);
+  }
+  function jourApres(iso) {
+    var d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + 1);
+    return dateLocaleISO(d);
+  }
+  async function recupererVacances(zone, annee) {
+    var c = calendrier();
+    zone = zone || c.zone; annee = annee || c.annee;
+    var url = "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-calendrier-scolaire/records"
+      + "?where=" + encodeURIComponent('zones="Zone ' + zone + '" and annee_scolaire="' + annee + '"')
+      + "&limit=100";
+    var r = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    var j = await r.json();
+    var lignes = j.results || (j.records || []).map(function (x) { return x.fields || x; }) || [];
+    var out = [], vus = {};
+    lignes.forEach(function (l) {
+      if (!l) return;
+      var pop = String(l.population || "-");
+      if (/enseignant/i.test(pop)) return;                    // on garde les dates élèves
+      var du = isoDe(l.start_date), reprise = isoDe(l.end_date);
+      if (!du || !reprise) return;
+      /* Le jeu de données donne la date de REPRISE en fin de période : le dernier jour de
+         vacances est donc la veille. */
+      var au = jourAvant(reprise);
+      if (au < du) au = du;
+      var nom = String(l.description || "Vacances").trim();
+      var cle = nom + "|" + du;
+      if (vus[cle]) return;
+      vus[cle] = 1;
+      out.push({ nom: nom, du: du, au: au });
+    });
+    out.sort(function (a, b) { return a.du < b.du ? -1 : 1; });
+    if (!out.length) throw new Error("aucune période reçue");
+    return out;
+  }
+  /* En début d'année scolaire - ou sur un poste neuf - les dates se récupèrent toutes seules,
+     une tentative par jour au plus, sans rien bloquer si le réseau refuse. */
+  var KEY_CALCHECK = "pdc_calcheck";
+  function verifierCalendrierAuto() {
+    if (!state) return;
+    var c = calendrier(), auj = dateLocaleISO(new Date());
+    var anneeCourante = anneeScolaireDe(auj);
+    if (c.annee === anneeCourante && c.vacances.length) return;      // déjà à jour
+    if (LS.raw(KEY_CALCHECK) === auj) return;                        // une tentative par jour
+    LS.setRaw(KEY_CALCHECK, auj);
+    if (c.annee !== anneeCourante) { c.annee = anneeCourante; c.feries = feriesCalcules(anneeCourante); c.vacances = []; }
+    recupererVacances(c.zone, anneeCourante).then(function (liste) {
+      appliquerVacances(liste, c.zone, anneeCourante, "data.education.gouv.fr (automatique)");
+      try { renderVacances(); } catch (e) { /* fenêtre fermée */ }
+      try { majHorloge(); renderHeader(); } catch (e) {}
+      flash("Vacances scolaires " + anneeCourante + " (zone " + c.zone + ") récupérées automatiquement auprès du ministère", 4600);
+    }).catch(function () {
+      try { save(); } catch (e) {}                                   // au moins les jours fériés calculés
+    });
+  }
+  function appliquerVacances(liste, zone, annee, source) {
+    var c = calendrier();
+    c.zone = zone || c.zone; c.annee = annee || c.annee;
+    c.vacances = liste;
+    c.feries = feriesCalcules(c.annee);
+    c.maj = Date.now(); c.source = source || "data.education.gouv.fr";
+    _cacheSem = { stamp: "", map: {} };
+    save();
   }
 
   /* ============ HORLOGE ET BASCULE AUTOMATIQUE DE CLASSE ============
@@ -5424,8 +5669,9 @@
   function creneauCourant(quand) {
     quand = quand || new Date();
     if (!state) return null;
+    if (horsCours(dateLocaleISO(quand))) return null;      // vacances ou jour férié : aucun cours
     var m = mat(); if (!m) return null;
-    var par = D.weekParity(m.calage, quand);
+    var par = parite(m.calage, quand);
     var jour = ((quand.getDay() + 6) % 7) + 1;
     var mins = quand.getHours() * 60 + quand.getMinutes();
     var grille = (m.edt && m.edt[par] && m.edt[par][jour]) || {};
@@ -5439,7 +5685,15 @@
   }
   function majHorloge(par) {
     var el = $("weekBadge"); if (!el || !state) return;
-    if (par === undefined) par = D.weekParity(mat().calage, new Date());
+    if (par === undefined) par = parite(mat().calage, new Date());
+    var hc = horsCours(dateLocaleISO(new Date()));
+    if (hc) {
+      el.innerHTML = esc(hc.type === "ferie" ? "🎌 " + hc.nom : "🏖️ " + hc.nom) + " · " + heureCourte();
+      el.title = (hc.type === "ferie" ? "Jour férié" : "Vacances scolaires"
+        + (hc.au ? " jusqu'au " + jjmm(hc.au) + " inclus, reprise le " + jjmm(jourApres(hc.au)) : ""))
+        + " : aucun cours, aucune bascule automatique de classe. Clic pour ouvrir l'emploi du temps.";
+      return;
+    }
     var cr = creneauCourant();
     el.innerHTML = "Sem. " + par + " · " + heureCourte() + (cr ? " · " + esc(state.classes[cr.cid].nom) : "");
     el.title = cr
@@ -6193,6 +6447,7 @@
     if (!state) return;
     var cid = curClassId(); if (!cid || !state.classes[cid] || debutVu(cid)) return;
     if (roomEdit || document.querySelector(".dlg.open")) return;
+    if (horsCours(dateLocaleISO(new Date()))) return;      // vacances ou férié : pas de début de cours
     if (classeAUnCreneau(cid)) { var cr = creneauCourant(); if (!cr || cr.cid !== cid) return; }
     var der = derniereEntree(cid), rp = rappelsEnAttente(cid);
     if (!der && !rp.length) return;
@@ -9484,11 +9739,89 @@
   var SLOTS = ["08:15", "09:10", "10:25", "11:20", "13:45", "14:40", "15:50"];
   var SLOT_END = { "08:15": "09:10", "09:10": "10:05", "10:25": "11:20", "11:20": "12:15", "13:45": "14:40", "14:40": "15:35", "15:50": "16:45" };
   var edtParity = "paire";
-  function openSchedule() { edtParity = D.weekParity(mat().calage, new Date()); renderSchedule(); $("dlgEdt").classList.add("open"); }
+  /* ---------- Vacances : affichage, saisie manuelle, récupération officielle ---------- */
+  function libPeriodeVac(v) {
+    return jjmm(v.du) + " → " + jjmm(v.au) + " inclus · reprise le " + jjmm(jourApres(v.au));
+  }
+  function renderVacances() {
+    var c = calendrier(), auj = dateLocaleISO(new Date());
+    var zs = $("vacZone"); if (zs) zs.value = c.zone;
+    var as = $("vacAnnee");
+    if (as) {
+      var liste = anneesProposees();
+      if (liste.indexOf(c.annee) < 0) liste.push(c.annee);
+      as.innerHTML = liste.sort().map(function (a) { return '<option value="' + a + '"' + (a === c.annee ? " selected" : "") + ">" + a + "</option>"; }).join("");
+    }
+    var sv = $("vacSauter"); if (sv) sv.checked = !!c.sauterVacances;
+    var et = $("vacEtat");
+    if (et) {
+      et.innerHTML = c.vacances.length
+        ? (esc(c.vacances.length + " période" + (c.vacances.length > 1 ? "s" : "") + " enregistrée" + (c.vacances.length > 1 ? "s" : "")
+            + " · zone " + c.zone + " · " + c.annee
+            + (c.maj ? " · mise à jour le " + fmtTs(c.maj) : "") + (c.source ? " · source : " + c.source : ""))
+            + "<br>Vérifiez les dates d'un coup d'oeil : elles sont corrigeables ligne par ligne.")
+        : "Aucune période enregistrée : touchez <b>⟳ Récupérer les dates officielles</b> (données ouvertes du ministère), ou saisissez-les à la main ci-dessous. Les jours fériés, eux, sont déjà calculés.";
+    }
+    var box = $("vacListe");
+    if (box) {
+      box.innerHTML = "";
+      c.vacances.slice().sort(function (a, b) { return a.du < b.du ? -1 : 1; }).forEach(function (v) {
+        var encours = (v.du <= auj && auj <= v.au);
+        var d = document.createElement("div");
+        d.className = "vac-l" + (encours ? " encours" : "");
+        d.innerHTML = '<div class="vac-tete"><b>' + esc(v.nom || "Vacances") + (encours ? " · en cours" : "") + "</b>"
+          + '<button class="sup" title="Supprimer cette période">✕</button></div>'
+          + '<div class="vac-dates"><input type="date" data-vdu value="' + esc(v.du) + '">'
+          + '<span>→</span><input type="date" data-vau value="' + esc(v.au) + '"></div>'
+          + '<span class="hint vac-info">' + esc(libPeriodeVac(v)) + "</span>";
+        d.querySelector("[data-vdu]").addEventListener("change", function () {
+          if (!this.value) { this.value = v.du; return; }
+          act("Vacances modifiées"); v.du = this.value; if (v.au < v.du) v.au = v.du;
+          _cacheSem = { stamp: "", map: {} }; save(); renderVacances(); majHorloge(); renderSchedule();
+        });
+        d.querySelector("[data-vau]").addEventListener("change", function () {
+          if (!this.value) { this.value = v.au; return; }
+          act("Vacances modifiées"); v.au = this.value; if (v.au < v.du) v.du = v.au;
+          _cacheSem = { stamp: "", map: {} }; save(); renderVacances(); majHorloge(); renderSchedule();
+        });
+        d.querySelector(".sup").addEventListener("click", function () {
+          if (!confirm("Supprimer « " + (v.nom || "cette période") + " » (" + libPeriodeVac(v) + ") ?")) return;
+          act("Vacances supprimées");
+          c.vacances = c.vacances.filter(function (x) { return x !== v; });
+          _cacheSem = { stamp: "", map: {} }; save(); renderVacances(); majHorloge(); renderSchedule();
+        });
+        box.appendChild(d);
+      });
+    }
+    var f = $("vacFeries"), fs = $("vacFerSum");
+    if (f) f.innerHTML = c.feries.map(function (x) { return '<span class="f">' + esc(jjmm(x.d) + " " + x.nom) + "</span>"; }).join("");
+    if (fs) fs.textContent = "Jours fériés calculés (" + c.feries.length + ") - aucun réseau nécessaire";
+  }
+  async function majVacancesOfficielles() {
+    var zone = $("vacZone").value, annee = $("vacAnnee").value, b = $("vacMaj");
+    b.disabled = true; b.textContent = "⟳ Récupération…";
+    try {
+      var liste = await recupererVacances(zone, annee);
+      act("Vacances scolaires récupérées");
+      appliquerVacances(liste, zone, annee, "data.education.gouv.fr");
+      renderVacances(); majHorloge(); renderSchedule(); renderAll();
+      flash(liste.length + " période(s) de vacances récupérée(s) pour la zone " + zone + " (" + annee + ")", 3600);
+    } catch (e) {
+      var c = calendrier();
+      c.zone = zone; c.annee = annee; c.feries = feriesCalcules(annee); save();
+      renderVacances();
+      flash("Dates officielles non récupérées (" + String(e.message || e).slice(0, 40) + "). Réseau du collège bloqué ? Saisissez les périodes à la main ci-dessous : les jours fériés sont déjà calculés.", 7000);
+    }
+    b.disabled = false; b.textContent = "⟳ Récupérer les dates officielles";
+  }
+  function openSchedule() { edtParity = parite(mat().calage, new Date()); renderVacances(); renderSchedule(); $("dlgEdt").classList.add("open"); }
   function renderSchedule() {
     var m = mat();
     $("edtParityLabel").textContent = "Grille affichée : semaine " + edtParity;
-    $("edtActive").textContent = "Semaine en cours détectée : " + D.weekParity(m.calage, new Date());
+    var hcEdt = horsCours(dateLocaleISO(new Date()));
+    $("edtActive").textContent = hcEdt
+      ? (hcEdt.nom + " - aucun cours aujourd'hui")
+      : ("Semaine en cours détectée : " + parite(m.calage, new Date()));
     var grid = m.edt[edtParity] || (m.edt[edtParity] = {});
     function optsFor(sel) {
       return '<option value="">-</option>' + Object.keys(state.classes).map(function (id) {
@@ -10229,18 +10562,6 @@
     $("btnComp").addEventListener("click", openCompPicker);
     $("btnRefs").addEventListener("click", openRefs);
     $("btnExport").addEventListener("click", openExport);
-    /* Échanges d'heures et sorties : page sœur posée dans le même dossier (echanges-heures.html).
-       Application installée sur iPad ou iPhone : même fenêtre, la page affiche un bouton « Plan de classe »
-       pour revenir. Navigateur : nouvel onglet, le plan de classe reste ouvert à côté.
-       Les données du plan de classe sont déjà enregistrées sur le poste à chaque modification. */
-    $("btnEchanges").addEventListener("click", function () {
-      var page = "echanges-heures.html";
-      var installee = window.navigator.standalone === true ||
-        (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
-      if (!installee) { var w = window.open(page, "_blank"); if (w) return; }
-      var ici = location.pathname.split("/").pop() || "index.html";
-      location.href = page + "?retour=" + encodeURIComponent(ici);
-    });
     $("btnRoomEdit").addEventListener("click", function () { if (roomEdit) stopRoomEdit(); else startRoomEdit(); });
     $("btnGroupes").addEventListener("click", openActDlg);
     $("dlgActX").addEventListener("click", closeAllDialogs);
@@ -10508,6 +10829,29 @@
     $("calageDate").addEventListener("change", function () { mat().calage.refMondayISO = this.value; save(); renderSchedule(); renderHeader(); });
     $("calageParity").addEventListener("change", function () { mat().calage.refParity = this.value; save(); renderSchedule(); renderHeader(); });
     $("edtAutoSelect").addEventListener("click", function () { autoSelectClass(); $("dlgEdt").classList.remove("open"); });
+    // --- vacances scolaires ---
+    $("vacMaj").addEventListener("click", majVacancesOfficielles);
+    $("vacZone").addEventListener("change", function () { calendrier().zone = this.value; save(); renderVacances(); });
+    $("vacAnnee").addEventListener("change", function () {
+      var c = calendrier(); c.annee = this.value; c.feries = feriesCalcules(c.annee);
+      _cacheSem = { stamp: "", map: {} }; save(); renderVacances(); majHorloge();
+    });
+    $("vacSauter").addEventListener("change", function () {
+      act("Alternance paire/impaire"); calendrier().sauterVacances = this.checked;
+      _cacheSem = { stamp: "", map: {} }; save(); renderSchedule(); renderHeader(); renderVacances();
+      flash(this.checked ? "Les semaines de vacances ne comptent plus dans l'alternance" : "L'alternance compte toutes les semaines du calendrier", 3200);
+    });
+    $("vacAdd").addEventListener("click", function () {
+      var nom = $("vacNom").value.trim() || "Vacances", du = $("vacDu").value, au = $("vacAu").value;
+      if (!du || !au) { flash("Indiquez le premier et le dernier jour de vacances"); return; }
+      if (au < du) { var t = du; du = au; au = t; }
+      act("Vacances ajoutées");
+      calendrier().vacances.push({ nom: nom, du: du, au: au });
+      _cacheSem = { stamp: "", map: {} }; save();
+      $("vacNom").value = ""; $("vacDu").value = ""; $("vacAu").value = "";
+      renderVacances(); majHorloge(); renderSchedule();
+      flash("Période ajoutée : " + nom, 2400);
+    });
     // refs
     $("dlgRefsX").addEventListener("click", function () { $("dlgRefs").classList.remove("open"); renderRoom(); });
     // export
@@ -10552,12 +10896,20 @@
     try { appliquerProjection(); } catch (e) { console.error("projection", e); }
     try { majBandeauSaisie(); } catch (e) { console.error("bandeau saisie", e); }
     try { demarrerHorloge(); } catch (e) { console.error("horloge", e); }
+    setTimeout(function () { try { verifierCalendrierAuto(); } catch (e) { console.error("calendrier", e); } }, 2500);
   }
   /* Surface de contrôle pour les tests automatiques : aucune action, seulement de la lecture
      des fonctions de fusion, pour vérifier qu'un poste ancien ne peut rien replaquer. */
   /* Surface de test (aucune influence sur l'usage normal) : elle permet de vérifier, sans
      Google Drive, que la question de synchronisation n'interrompt jamais une saisie. */
   window.PDCX = { fusionnerEtats: fusionnerEtats, migrate: migrate,
+    calendrier: {
+      horsCours: function (iso) { return horsCours(iso); },
+      parite: function (iso) { return parite(mat().calage, new Date(iso + "T10:00:00")); },
+      feries: function () { return calendrier().feries; },
+      poser: function (liste) { appliquerVacances(liste, calendrier().zone, calendrier().annee, "test"); },
+      creneau: function (iso, h) { return creneauCourant(new Date(iso + "T" + (h || "10:00") + ":00")); }
+    },
     sync: {
       occupe: function () { return utilisateurOccupe(); },
       enAttente: function () { return conflitEnAttente; },

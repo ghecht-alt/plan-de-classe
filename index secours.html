@@ -856,6 +856,14 @@
   .bi-tab td.bi-sc{width:58px;text-align:right;color:var(--blue);font-weight:800;white-space:nowrap;}
   .bilan-para{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:10px 12px;}
   .bilan-para h4{margin:0 0 6px;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--blue);}
+  .dash-cl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+  .dash-cl label{font-size:.78rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+  .dash-cl select{flex:1;min-width:160px;max-width:260px;border:1.6px solid var(--line);border-radius:9px;
+    padding:8px 10px;font:inherit;font-size:.88rem;font-weight:700;background:#fff;color:var(--ink);min-height:40px;}
+  .bilan-per{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;}
+  .bilan-per label{font-size:.78rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+  .bilan-per select{flex:1;min-width:220px;max-width:340px;border:1.6px solid var(--line);border-radius:9px;
+    padding:8px 10px;font:inherit;font-size:.85rem;background:#fff;color:var(--ink);min-height:40px;}
   .bilan-para textarea{width:100%;border:1.5px solid var(--line);border-radius:9px;padding:9px 10px;font:inherit;font-size:.84rem;line-height:1.5;background:#fff;color:var(--ink);resize:vertical;}
   @media print{ header.top,.scrim,.sheet,.dlg,.toast,.iconbtn,.seg,.slot,.banner,.conflictbar{display:none !important;} body{background:#fff;} main{padding:0;} .seat,.ilot{break-inside:avoid; box-shadow:none;} }
 </style>
@@ -915,6 +923,8 @@
   <button class="iconbtn" id="btnDashboard" title="Climat des îlots et regard transversal sur toutes les matières">📊 Tableau de bord</button>
   <button class="iconbtn" id="btnExport">📤 Bilans et exports</button>
   <button class="iconbtn" id="btnRefs">📚 Listes et référentiels</button>
+  <hr>
+  <button class="iconbtn" id="btnEchanges" title="Échanges d'heures entre collègues, sorties et voyages (page Échanges d'heures et sorties)">🔁 Échanges d'heures et sorties</button>
 </div>
 
 <div class="banner warn hidden" id="reconnect">⚠️ Session Google expirée - vos saisies restent en local.
@@ -1285,8 +1295,13 @@
 <!-- Tableau de bord des groupes -->
 <div class="dlg" id="dlgDashboard">
   <div class="panel">
-    <div class="ph">📊 Tableau de bord de la classe <button class="x" id="dlgDashboardX">✕</button></div>
+    <div class="ph"><span id="dashTitre">📊 Tableau de bord de la classe</span> <button class="x" id="dlgDashboardX">✕</button></div>
     <div class="pc">
+      <div class="dash-cl">
+        <label for="dashClasse" style="margin:0">Classe</label>
+        <select id="dashClasse"></select>
+        <span class="hint" id="dashMat"></span>
+      </div>
       <div class="seg" id="dashSeg" style="margin-bottom:10px">
         <button data-t="ilots" class="on">Îlots</button>
         <button data-t="transversal">Transversal</button>
@@ -1303,12 +1318,21 @@
         <div class="actions" style="margin-top:12px"><button class="ghost2" id="transPrint">🖨️ Imprimer ce tableau</button></div>
       </div>
       <div id="dashBilan" class="hidden">
-        <div class="seg" id="bilanSeg" style="margin-bottom:8px">
-          <button data-p="seance">Cette séance</button>
-          <button data-p="15j">15 jours</button>
-          <button data-p="trim" class="on">Trimestre</button>
-          <button data-p="dates">Dates au choix</button>
+        <div class="bilan-per">
+          <label for="bilanSel" style="margin:0">Période du bilan</label>
+          <select id="bilanSel">
+            <option value="seance">Cette séance (comparée à la précédente)</option>
+            <option value="j7">1 semaine</option>
+            <option value="j14">2 semaines</option>
+            <option value="j21">3 semaines</option>
+            <option value="j28">4 semaines (1 mois)</option>
+            <option value="j42">6 semaines</option>
+            <option value="j56">8 semaines (2 mois)</option>
+            <option value="trim" selected>Trimestre en cours</option>
+            <option value="dates">Dates au choix</option>
+          </select>
         </div>
+        <p class="hint" id="bilanAide" style="margin:2px 0 8px"></p>
         <div id="bilanDates" class="hidden" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
           <label style="margin:0">Du</label><input type="date" id="bilanDu" style="max-width:160px">
           <label style="margin:0">au</label><input type="date" id="bilanAu" style="max-width:160px">
@@ -3784,7 +3808,7 @@
   var KEY_DERNIERENVOI = "pdc_dernierenvoi";
   /* Repère de version : permet de vérifier d'un coup d'œil que deux postes font tourner
      le même programme (⚙︎ Classe, en bas du bloc Drive). */
-  var APP_VERSION = "2026-09-30-b";
+  var APP_VERSION = "2026-10-04-b";
   var saveTimer = null, dirty = false;
   function marquerNonEnvoye(v) { dirty = !!v; LS.setRaw(KEY_NONENVOYE, v ? "1" : ""); }
   function relireNonEnvoye() { dirty = (LS.raw(KEY_NONENVOYE) === "1"); }
@@ -5361,7 +5385,13 @@
   function compValidated(eleveId) { var m = mat(), d = eData(eleveId); return m.sessionComp.some(function (c) { return d.compTouched && d.compTouched[c]; }); }
 
   /* ====================== RENDU ====================== */
-  function renderAll() { if (assurerClasseActive()) save(); renderHeader(); renderRoom(); setTimeout(function () { try { peutEtreDebutCours(); } catch (e) {} }, 450); }
+  function renderAll() {
+    if (assurerClasseActive()) save();
+    renderHeader(); renderRoom();
+    /* Le tableau de bord ouvert doit suivre la classe affichée, jamais rester sur la précédente. */
+    try { var dd = $("dlgDashboard"); if (dd && dd.classList.contains("open")) majDashboard(); } catch (e) {}
+    setTimeout(function () { try { peutEtreDebutCours(); } catch (e) {} }, 450);
+  }
   function renderHeader() {
     if (!state) return;
     $("classSelect").innerHTML = Object.keys(state.classes).map(function (id) {
@@ -5560,10 +5590,21 @@
     if (n === "2") return { du: (y + 1) + "-01-01", au: (y + 1) + "-03-31", nom: "2e trimestre" };
     return { du: (y + 1) + "-04-01", au: (y + 1) + "-08-31", nom: "3e trimestre" };
   }
+  /* Une classe n'est vue qu'une ou deux fois par semaine : comparer sept jours à sept jours
+     n'oppose souvent qu'une séance à une autre. La période se choisit donc librement, d'une
+     semaine au trimestre, et la période de comparaison est toujours de même longueur. */
   function bornesBilan() {
     var auj = dateLocaleISO(new Date()), d;
-    if (bilanPeriode === "seance") return { du: auj, au: auj, lib: "séance du " + jjmm(auj) };
-    if (bilanPeriode === "15j") { d = new Date(); d.setDate(d.getDate() - 14); return { du: dateLocaleISO(d), au: auj, lib: "15 derniers jours" }; }
+    if (bilanPeriode === "seance") {
+      var sc = seancesDuBilan(curClassId());
+      var jour = sc.length ? sc[sc.length - 1] : auj;
+      return { du: jour, au: jour, lib: "séance du " + jjmm(jour), seance: true };
+    }
+    if (/^j\d+$/.test(bilanPeriode)) {
+      var n = parseInt(bilanPeriode.slice(1), 10) || 7;
+      d = new Date(); d.setDate(d.getDate() - (n - 1));
+      return { du: dateLocaleISO(d), au: auj, lib: libPeriode(n), jours: n };
+    }
     if (bilanPeriode === "dates") {
       var du = ($("bilanDu") && $("bilanDu").value) || "", au = ($("bilanAu") && $("bilanAu").value) || auj;
       if (!du) { d = new Date(); d.setDate(d.getDate() - 30); du = dateLocaleISO(d); }
@@ -5573,7 +5614,35 @@
     var tr = bornesTrimestre(auj);
     return { du: tr.du, au: (tr.au < auj ? tr.au : auj), lib: tr.nom };
   }
+  function libPeriode(n) {
+    if (n % 7 === 0) { var sem = n / 7; return sem === 1 ? "dernière semaine" : (sem + " dernières semaines"); }
+    return n + " derniers jours";
+  }
+  /* Les journées où cette classe a réellement été vue, du plus ancien au plus récent. */
+  function seancesDuBilan(cid) {
+    if (!cid) return [];
+    var jours = {};
+    try {
+      seancesTenues(cid).forEach(function (cle) { jours[String(cle).slice(0, 10)] = 1; });
+    } catch (e) { /* jamais bloquant */ }
+    return Object.keys(jours).sort();
+  }
   function periodePrecedente(du, au) {
+    /* Bilan d'une seule séance : la comparaison qui a du sens est la SÉANCE précédente, pas la
+       veille - une classe vue le mercredi n'a rien à montrer le mardi. */
+    if (bilanPeriode === "seance") {
+      var sc = seancesDuBilan(curClassId()).filter(function (j) { return j < du; });
+      if (sc.length) { var prec = sc[sc.length - 1]; return { du: prec, au: prec }; }
+    }
+    /* Bilan du trimestre : on le compare au TRIMESTRE précédent, pas aux quatre-vingts jours
+       qui précèdent - lesquels tombent le plus souvent dans les vacances. */
+    if (bilanPeriode === "trim") {
+      var av = new Date(du + "T12:00:00"); av.setDate(av.getDate() - 1);
+      var tr = bornesTrimestre(dateLocaleISO(av));
+      // le 1er trimestre n'a pas de trimestre précédent dans l'année scolaire en cours
+      if (tr.nom === "3e trimestre") return { du: "", au: "", nom: "", aucun: true };
+      return { du: tr.du, au: tr.au, nom: tr.nom };
+    }
     var d1 = new Date(du + "T12:00:00"), d2 = new Date(au + "T12:00:00");
     var jours = Math.max(1, Math.round((d2 - d1) / 86400000) + 1);
     var fin = new Date(d1); fin.setDate(fin.getDate() - 1);
@@ -5708,9 +5777,10 @@
     var evo = "";
     if (idxPrec && idxPrec.nbSeances) {
       var d = Math.round((idx.total - idxPrec.total) * 2) / 2;
-      evo = d > 0.4 ? ", en hausse de " + String(d).replace(".", ",") + " point sur la période précédente"
-        : (d < -0.4 ? ", en baisse de " + String(Math.abs(d)).replace(".", ",") + " point sur la période précédente"
-          : ", stable par rapport à la période précédente");
+      var base = " (" + idxPrec.nbSeances + " séance" + (idxPrec.nbSeances > 1 ? "s" : "") + " de référence)";
+      evo = d > 0.4 ? ", en hausse de " + String(d).replace(".", ",") + " point sur la période précédente" + base
+        : (d < -0.4 ? ", en baisse de " + String(Math.abs(d)).replace(".", ",") + " point sur la période précédente" + base
+          : ", stable par rapport à la période précédente" + base);
     }
     p.push("L'indice d'ambiance s'établit à " + String(idx.total).replace(".", ",") + " sur 20 ("
       + String(idx.participation).replace(".", ",") + " sur 12 pour la participation, "
@@ -5744,19 +5814,42 @@
     var bo = bornesBilan();
     var b = bilanClasse(cid, bo.du, bo.au);
     var pr = periodePrecedente(bo.du, bo.au);
-    var bp = bilanClasse(cid, pr.du, pr.au);
+    var bp = pr.aucun ? bilanClasse(cid, "9999-01-01", "9999-01-02") : bilanClasse(cid, pr.du, pr.au);
     var idx = indiceAmbiance(b), idxP = indiceAmbiance(bp); idxP.nbSeances = bp.nbSeances;
-    return { cid: cid, bornes: bo, b: b, idx: idx, idxPrec: idxP, texte: paragrapheBilan(b, idx, idxP) };
+    return { cid: cid, bornes: bo, prec: pr, b: b, bPrec: bp, idx: idx, idxPrec: idxP, texte: paragrapheBilan(b, idx, idxP) };
   }
 
+  /* Combien de fois voit-on cette classe par semaine ? On le déduit des séances réellement
+     tenues : c'est ce qui dit à l'enseignant quelle période choisir pour avoir de la matière. */
+  function rythmeHebdo(cid) {
+    var j = seancesDuBilan(cid);
+    if (j.length < 2) return 0;
+    var d1 = new Date(j[0] + "T12:00:00"), d2 = new Date(j[j.length - 1] + "T12:00:00");
+    var semaines = Math.max(1, (d2 - d1) / (7 * 86400000));
+    return Math.round(j.length / semaines * 10) / 10;
+  }
+  function majAideBilan(r) {
+    var el = $("bilanAide"); if (!el) return;
+    var cid = curClassId();
+    var ry = cid ? rythmeHebdo(cid) : 0;
+    var t = "La période choisie est comparée à la période précédente de même longueur.";
+    if (ry) {
+      t += " Vous voyez cette classe environ " + String(ry).replace(".", ",") + " fois par semaine : comptez "
+        + "au moins trois semaines pour que la comparaison repose sur plusieurs séances.";
+    }
+    if (r && r.b && r.b.nbSeances) t += " Ici : " + r.b.nbSeances + " séance" + (r.b.nbSeances > 1 ? "s" : "") + " relevée" + (r.b.nbSeances > 1 ? "s" : "") + ".";
+    el.textContent = t;
+  }
   function renderBilan() {
     var box = $("bilanBody"); if (!box) return;
     var r = bilanCourant();
+    majAideBilan(r);
     if (!r) { box.innerHTML = '<p class="hint">Affichez une classe pour voir son bilan.</p>'; return; }
     var b = r.b, idx = r.idx, cl = state.classes[r.cid];
     if (!b.nbSeances) {
       box.innerHTML = '<p class="hint">Aucune séance relevée sur cette période pour <b>' + esc(cl.nom)
-        + "</b>. Choisissez une période plus large, ou notez d'abord quelques participations.</p>";
+        + "</b> (" + esc(r.bornes.lib) + "). Choisissez une période plus large dans la liste ci-dessus - "
+        + "jusqu'au trimestre - ou notez d'abord quelques participations.</p>";
       return;
     }
     var pct = function (a, t) { return t ? Math.round(a / t * 100) : 0; };
@@ -5766,11 +5859,24 @@
       + (b.absences ? " · " + b.absences + " absence" + (b.absences > 1 ? "s" : "") : "") + "</div>";
 
     var d = Math.round((idx.total - r.idxPrec.total) * 2) / 2;
-    var fleche = !r.idxPrec.nbSeances ? "" : (d > 0.4 ? ' <span class="bi-up">▲ +' + vir(d) + "</span>"
+    var nbP = r.idxPrec.nbSeances || 0;
+    var fleche = !nbP ? "" : (d > 0.4 ? ' <span class="bi-up">▲ +' + vir(d) + "</span>"
       : (d < -0.4 ? ' <span class="bi-dn">▼ ' + vir(d) + "</span>" : ' <span class="bi-eq">= stable</span>'));
+    /* On dit toujours sur quoi porte la comparaison : une flèche sans base comparable ne vaut
+       rien quand on ne voit la classe qu'une fois par semaine. */
+    var refLib = bilanPeriode === "seance" ? "la séance du " + jjmm(r.prec.du)
+      : (r.prec.nom ? "le " + r.prec.nom
+        : "la période précédente (du " + jjmm(r.prec.du) + " au " + jjmm(r.prec.au) + ")");
+    var compar = r.prec.aucun
+      ? "Premier trimestre de l'année : aucun trimestre précédent à comparer. Choisissez une période plus courte pour suivre une évolution."
+      : (nbP
+        ? "Comparé à " + refLib + " : " + nbP + " séance" + (nbP > 1 ? "s" : "") + " contre " + b.nbSeances + " ici."
+          + (nbP < 2 && b.nbSeances < 2 ? " Une séance contre une : à lire avec prudence, allongez la période pour une tendance." : "")
+        : "Aucune séance sur la période précédente : pas d'évolution à afficher. Choisissez une période plus longue pour comparer.");
     h += '<div class="bilan-idx"><div class="bi-note">' + vir(idx.total) + '<span>/20</span></div>'
       + '<div class="bi-det"><b>Indice d\'ambiance</b>' + fleche
       + "<div>Participation " + vir(idx.participation) + "/12 · Climat " + vir(idx.climat) + "/8</div>"
+      + '<div class="bi-mini">' + esc(compar) + "</div>"
       + '<div class="bi-mini">Repère sur votre heure, à comparer d\'une période à l\'autre. Ce n\'est pas une note d\'élèves.</div></div></div>';
 
     h += '<div class="bilan-grid">';
@@ -5857,7 +5963,12 @@
       + '<div class="sub">' + esc(mat().nom || "") + " · " + esc(r.bornes.lib) + " · " + b.nbSeances + " séances · "
       + b.effectif + " élèves · " + b.absences + " absences · édité le " + horodatageLisible() + "</div>"
       + '<div class="idx"><b>' + vir(r.idx.total) + " / 20</b> d\'indice d\'ambiance · participation "
-      + vir(r.idx.participation) + "/12 · climat " + vir(r.idx.climat) + "/8</div>"
+      + vir(r.idx.participation) + "/12 · climat " + vir(r.idx.climat) + "/8"
+      + (r.idxPrec.nbSeances
+          ? "<br><small>Comparé à la période précédente (" + r.idxPrec.nbSeances + " séance"
+            + (r.idxPrec.nbSeances > 1 ? "s" : "") + ") : " + vir(Math.round((r.idx.total - r.idxPrec.total) * 2) / 2) + " point(s)</small>"
+          : "<br><small>Pas de période précédente comparable : aucune séance relevée avant.</small>")
+      + "</div>"
       + "<h2>Le compte rendu</h2><div class='para'>" + esc(r.texte) + "</div>"
       + "<h2>À mettre en avant</h2>" + tab(av, "Rien à signaler.", "pos")
       + "<h2>À surveiller</h2>" + tab(su, "Aucun comportement à reprendre.", "neg")
@@ -6127,8 +6238,35 @@
     flash("🔔 Rappel créé pour le prochain cours", 2600);
   }
 
+  /* Le tableau de bord lit TOUJOURS la classe affichée au moment où on le regarde. Il restait
+     auparavant sur la classe ouverte la première fois : seul l'onglet « Îlots » était redessiné
+     à la réouverture, les onglets Transversal et Bilan gardaient leur contenu d'avant. */
   function openDashboard() {
     var cid = curClassId(); if (!cid) { flash("Aucune classe active"); return; }
+    majDashboard();
+    $("dlgDashboard").classList.add("open");
+  }
+  /* Liste des classes dans le tableau de bord : on peut en changer sans le refermer. */
+  function renderDashClasses() {
+    var sel = $("dashClasse"); if (!sel || !state) return;
+    var cid = curClassId();
+    sel.innerHTML = Object.keys(state.classes).map(function (id) {
+      return '<option value="' + id + '"' + (id === cid ? " selected" : "") + ">" + esc(state.classes[id].nom) + "</option>";
+    }).join("") || '<option value="">- aucune classe -</option>';
+    var cl = state.classes[cid];
+    $("dashTitre").textContent = "📊 Tableau de bord" + (cl ? " · " + cl.nom : "");
+    $("dashMat").textContent = (mat().nom || "") + " · " + (cl ? cl.eleveIds.length + " élèves" : "");
+  }
+  /* Redessine les trois onglets d'un coup : aucun ne peut rester sur une classe précédente. */
+  function majDashboard() {
+    if (!state || !curClassId()) return;
+    renderDashClasses();
+    renderDashIlots();
+    renderTransversal();
+    renderBilan();
+  }
+  function renderDashIlots() {
+    var cid = curClassId(); if (!cid) return;
     var p = plan(cid), n = p.groups, eleves = classEleves(cid);
     var groups = [];
     for (var g = 0; g < n; g++) groups[g] = eleves.filter(function (s) { return posOf(cid, s.id).group === g; });
@@ -6164,8 +6302,6 @@
         }).join("") + "</div>";
     }
     $("dashBody").innerHTML = html || '<p class="hint">Aucune donnée pour l\'instant. Notez quelques attitudes positives et comportements, puis revenez ici.</p>';
-    renderTransversal();
-    $("dlgDashboard").classList.add("open");
   }
   /* ==================== SALLE PERSONNALISÉE : édition & rendu ==================== */
   var roomEdit = null; // null | {tool:"desk"|"rect2"|"round4"|null, sel:tableId|"desk"|null}
@@ -10093,6 +10229,18 @@
     $("btnComp").addEventListener("click", openCompPicker);
     $("btnRefs").addEventListener("click", openRefs);
     $("btnExport").addEventListener("click", openExport);
+    /* Échanges d'heures et sorties : page sœur posée dans le même dossier (echanges-heures.html).
+       Application installée sur iPad ou iPhone : même fenêtre, la page affiche un bouton « Plan de classe »
+       pour revenir. Navigateur : nouvel onglet, le plan de classe reste ouvert à côté.
+       Les données du plan de classe sont déjà enregistrées sur le poste à chaque modification. */
+    $("btnEchanges").addEventListener("click", function () {
+      var page = "echanges-heures.html";
+      var installee = window.navigator.standalone === true ||
+        (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+      if (!installee) { var w = window.open(page, "_blank"); if (w) return; }
+      var ici = location.pathname.split("/").pop() || "index.html";
+      location.href = page + "?retour=" + encodeURIComponent(ici);
+    });
     $("btnRoomEdit").addEventListener("click", function () { if (roomEdit) stopRoomEdit(); else startRoomEdit(); });
     $("btnGroupes").addEventListener("click", openActDlg);
     $("dlgActX").addEventListener("click", closeAllDialogs);
@@ -10146,6 +10294,15 @@
         if (t === "bilan") renderBilan();
       });
     });
+    $("dashClasse").addEventListener("change", function () {
+      if (!this.value || !state.classes[this.value]) return;
+      state.uiPrefs.classeActive = this.value;
+      var cr2 = creneauCourant();
+      if (cr2) creneauApplique = cr2.cle;         // choix manuel assumé : on ne le contredit pas
+      if (saisieSeance && saisieSeance.cid !== this.value) { saisieSeance = null; majBandeauSaisie(); }
+      save(); renderAll();                       // renderAll redessine aussi le tableau de bord ouvert
+      flash("Tableau de bord : " + state.classes[this.value].nom, 1800);
+    });
     $("transPrint").addEventListener("click", printTransversal);
     $("btnJournal").addEventListener("click", ouvrirJournal);
     $("dlgJournalX").addEventListener("click", function () {
@@ -10171,14 +10328,10 @@
     $("dlgDebutCoursX").addEventListener("click", function () { $("dlgDebutCours").classList.remove("open"); });
     $("dcOk").addEventListener("click", function () { $("dlgDebutCours").classList.remove("open"); });
     $("dcJournal").addEventListener("click", function () { $("dlgDebutCours").classList.remove("open"); ouvrirJournal(); });
-    $("bilanSeg").querySelectorAll("button").forEach(function (bb) {
-      bb.addEventListener("click", function () {
-        $("bilanSeg").querySelectorAll("button").forEach(function (o) { o.classList.remove("on"); });
-        bb.classList.add("on");
-        bilanPeriode = bb.dataset.p;
-        $("bilanDates").classList.toggle("hidden", bilanPeriode !== "dates");
-        renderBilan();
-      });
+    $("bilanSel").addEventListener("change", function () {
+      bilanPeriode = this.value;
+      $("bilanDates").classList.toggle("hidden", bilanPeriode !== "dates");
+      renderBilan();
     });
     $("bilanDu").addEventListener("change", renderBilan);
     $("bilanAu").addEventListener("change", renderBilan);
