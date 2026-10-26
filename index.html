@@ -948,8 +948,9 @@
   <button class="iconbtn" id="btnEchanges" title="Échanges d'heures entre collègues, sorties et voyages (page Échanges d'heures et sorties)">🔁 Échanges d'heures et sorties</button>
 </div>
 
-<div class="banner warn hidden" id="reconnect">⚠️ Session Google expirée - vos saisies restent en local.
-  <button class="bbtn" id="btnReconnect">Se reconnecter</button></div>
+<div class="banner warn hidden" id="reconnect"><span id="reconnectTxt">⚠️ Session Google expirée - vos saisies restent en local.</span>
+  <button class="bbtn" id="btnReconnect">Se reconnecter</button>
+  <button class="bbtn" id="btnReconnectCompte" title="Choisir ou changer le compte Google qui reçoit les sauvegardes">Choisir le compte</button></div>
 <div class="conflictbar hidden" id="conflictBar"></div>
 <div class="bavardbar hidden" id="bavardBar"></div>
 <div class="bavardbar hidden" id="appelBar" style="background:#8a6d1a"></div>
@@ -1029,6 +1030,7 @@
         <label>Identifiant client Google (Client ID OAuth)</label>
         <input type="text" id="admClientId" placeholder="xxxxxxxx.apps.googleusercontent.com" autocomplete="off">
         <p class="hint">À créer une seule fois dans la console Google Cloud (identifiant OAuth « Application Web », origine autorisée = l'adresse d'où vous ouvrez ce fichier). <b>Le compte qui crée cet identifiant et le compte qui reçoit les sauvegardes peuvent être différents</b> : au moment d'autoriser, choisissez le compte Google du Drive voulu. Tout ce qui part sur Drive est <b>chiffré</b> : illisible sans cette application et votre phrase de récupération.</p>
+        <div class="vac-bar" style="margin:8px 0 4px"><span class="hint" id="admCompte" style="flex:1;min-width:200px"></span><button class="admbtn" id="admChangerCompte">Changer de compte Google</button></div>
         <div class="row2"><div><button class="admbtn" id="admSaveClientId" style="width:100%">Enregistrer l'identifiant</button></div><div><button class="admbtn" id="admDriveNow" style="width:100%">☁︎ Sauvegarder maintenant</button></div></div>
         <p class="hint" id="admBackupInfo" style="margin-top:8px"></p>
         <div class="adm" id="admBackupsWrap" style="display:none"><div class="admscroll" id="admBackups"></div></div>
@@ -3858,7 +3860,7 @@
   var KEY_DERNIERENVOI = "pdc_dernierenvoi";
   /* Repère de version : permet de vérifier d'un coup d'œil que deux postes font tourner
      le même programme (⚙︎ Classe, en bas du bloc Drive). */
-  var APP_VERSION = "2026-10-23";
+  var APP_VERSION = "2026-10-23-b";
   var saveTimer = null, dirty = false;
   function marquerNonEnvoye(v) { dirty = !!v; LS.setRaw(KEY_NONENVOYE, v ? "1" : ""); }
   function relireNonEnvoye() { dirty = (LS.raw(KEY_NONENVOYE) === "1"); }
@@ -4284,7 +4286,31 @@
 
   /* ---------- Google Drive (drive.file, jeton navigateur via GIS) ---------- */
   var drive = { token: null, tokenClient: null, fileId: null, expiresAt: 0, remoteModified: null, timer: null, enCours: false, renewTimer: null };
-  var dernierRenouvellement = 0;
+  var dernierRenouvellement = 0, dernierEchecJeton = "";
+  /* Le compte Google qui reçoit les sauvegardes est mémorisé sur CE poste (adresse seulement,
+     jamais de mot de passe ni de jeton). Sans lui, un navigateur où plusieurs comptes Google
+     sont ouverts ne sait pas lequel choisir : Google renonce au renouvellement silencieux et
+     l'on doit se reconnecter à chaque rafraîchissement. Avec lui, le renouvellement vise le bon
+     compte et se fait sans rien demander. */
+  var KEY_DRIVEHINT = "pdc_gcompte";
+  function compteDrive() { return LS.raw(KEY_DRIVEHINT) || ""; }
+  function memoriserCompteDrive(mail) {
+    mail = String(mail || "").trim();
+    if (!mail || mail === compteDrive()) return;
+    LS.setRaw(KEY_DRIVEHINT, mail);
+    drive.tokenClient = null; initDrive();      // le client doit être recréé avec l'indication
+    try { renderClassAdmin(); } catch (e) {}
+  }
+  /* Quelle adresse ? Le Drive nous le dit lui-même, sans scope supplémentaire. */
+  async function lireCompteDrive() {
+    try {
+      if (!tokenValid()) return;
+      var r = await fetch("https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)", { headers: await driveHeaders() });
+      if (!r.ok) return;
+      var j = await r.json();
+      if (j && j.user && j.user.emailAddress) memoriserCompteDrive(j.user.emailAddress);
+    } catch (e) { /* sans importance : on réessaiera à la prochaine connexion */ }
+  }
   function driveConfigured() { return !!GOOGLE_CLIENT_ID; }
   function remoteModifConnu() { return LS.raw(KEY_REMOTEMOD) || null; }
   function memoriserRemoteModif(t) { if (t) { LS.setRaw(KEY_REMOTEMOD, t); drive.remoteModified = t; } }
@@ -4301,17 +4327,24 @@
     updateDriveBadge();
     if (!driveConfigured()) return;
     if (!gisLoaded()) { setTimeout(initDrive, 600); return; }
-    drive.tokenClient = google.accounts.oauth2.initTokenClient({
+    var conf = {
       client_id: GOOGLE_CLIENT_ID, scope: "https://www.googleapis.com/auth/drive.file",
       callback: function (resp) {
         if (resp && resp.access_token) {
           drive.token = resp.access_token; drive.expiresAt = Date.now() + (resp.expires_in || 3600) * 1000;
-          hideReconnectBanner(); updateDriveBadge(); driveSyncAfterConnect(); startDriveTimer(); planifierRenouvellement();
+          dernierEchecJeton = "";
+          hideReconnectBanner(); updateDriveBadge(); lireCompteDrive();
+          driveSyncAfterConnect(); startDriveTimer(); planifierRenouvellement();
         }
       },
       // échec d'un renouvellement silencieux : là seulement on sollicite l'utilisateur
-      error_callback: function () { showReconnectBanner(); updateDriveBadge("Reconnexion requise"); }
-    });
+      error_callback: function (err) {
+        dernierEchecJeton = (err && (err.type || err.message)) ? String(err.type || err.message) : "";
+        showReconnectBanner(); updateDriveBadge("Reconnexion requise");
+      }
+    };
+    if (compteDrive()) conf.hint = compteDrive();     // viser le compte déjà utilisé ici
+    drive.tokenClient = google.accounts.oauth2.initTokenClient(conf);
     updateDriveBadge();
     /* REPRISE AU DÉMARRAGE - indispensable quand on travaille sur deux ordinateurs.
        Sans cela, l'application attendait un retour de focus ou un clic pour aller voir le Drive :
@@ -4330,7 +4363,12 @@
       updateDriveBadge("Local"); return;
     }
     if (!drive.tokenClient) { initDrive(); flash("Initialisation Google… réessayez dans un instant."); return; }
-    drive.tokenClient.requestAccessToken({ prompt: consent ? "consent" : "" });
+    /* Un clic sur le badge essaie d'abord SANS rien demander : si la session Google est ouverte
+       et l'autorisation déjà donnée, la reconnexion est instantanée et invisible. L'écran de
+       consentement n'apparaît que si ce premier essai échoue - ou si on le demande franchement. */
+    if (consent === "force") { drive.tokenClient.requestAccessToken({ prompt: "consent", hint: compteDrive() || undefined }); return; }
+    try { drive.tokenClient.requestAccessToken({ prompt: "" }); }
+    catch (e) { drive.tokenClient.requestAccessToken({ prompt: "consent" }); }
   }
   async function driveHeaders() { return { Authorization: "Bearer " + drive.token }; }
   async function driveFindFile() {
@@ -4608,7 +4646,20 @@
     drive.renewTimer = setTimeout(function () { renouvellerJeton(); }, delai);
   }
   function onTokenExpired() { if (!renouvellerJeton()) { showReconnectBanner(); updateDriveBadge("Reconnexion requise"); } }
-  function showReconnectBanner() { var b = $("reconnect"); if (b) b.classList.remove("hidden"); }
+  function showReconnectBanner() {
+    var b = $("reconnect"); if (!b) return;
+    var t = $("reconnectTxt");
+    if (t) {
+      /* Dire ce qui a échoué : « reconnectez-vous » sans raison ne fait pas avancer. */
+      var pourquoi = "";
+      if (/popup_failed_to_open/i.test(dernierEchecJeton)) pourquoi = " Le navigateur a bloqué la fenêtre Google ouverte sans clic de votre part : un clic ici suffit.";
+      else if (/popup_closed/i.test(dernierEchecJeton)) pourquoi = " La fenêtre Google a été fermée avant la fin.";
+      else if (dernierEchecJeton) pourquoi = " Google n'a pas pu renouveler l'accès sans vous le demander"
+        + (compteDrive() ? "." : " : plusieurs comptes Google sont peut-être ouverts dans ce navigateur. Utilisez « Choisir le compte » une fois, ce sera ensuite automatique.");
+      t.textContent = "⚠️ Accès Google à renouveler - vos saisies restent enregistrées sur ce poste." + pourquoi;
+    }
+    b.classList.remove("hidden");
+  }
   function hideReconnectBanner() { var b = $("reconnect"); if (b) b.classList.add("hidden"); }
   /* La pastille doit dire la vérité d'un coup d'œil. Le cas dangereux - du travail saisi ici
      que le Drive n'a jamais reçu - s'affiche désormais explicitement, au lieu du discret
@@ -8272,6 +8323,12 @@
   function renderClassAdmin() {
     renderAdmClasses(); renderAdmEleves(); renderMatieres(); renderSalles();
     try { $("admClientId").value = localStorage.getItem(KEY_CLIENTID) || ""; } catch (e) {}
+    try {
+      var ac = $("admCompte");
+      if (ac) ac.innerHTML = compteDrive()
+        ? ("Compte Google des sauvegardes sur ce poste : <b>" + esc(compteDrive()) + "</b>. Le renouvellement d'accès le vise directement, sans rien vous demander.")
+        : "Compte Google pas encore identifié sur ce poste. Il le sera à la prochaine connexion réussie : ensuite, plus besoin de se reconnecter à chaque ouverture.";
+    } catch (e) {}
     if (!origineValide()) {
       $("admBackupInfo").innerHTML = "<b>Cette page est ouverte depuis votre disque dur</b> (" + location.protocol
         + ") : Google n'accepte pas ce mode et renverra une erreur 400. Ouvrez l'application depuis son adresse "
@@ -10707,8 +10764,19 @@
     $("btnFastLecon").addEventListener("click", function () { verifierCreneauAvantSaisie(startLeconMode); });
     $("dlgOralStepX").addEventListener("click", function () { $("dlgOralStep").classList.remove("open"); effacerInterroge(); if (oralMode) { oralMode.step = "who"; oralMode.eleveId = null; updateOralBanner(); } if (leconMode) updateLeconBanner(); });
     $("weekBadge").addEventListener("click", openSchedule);
-    $("driveBadge").addEventListener("click", function () { driveConnect(true); });
+    $("driveBadge").addEventListener("click", function () { driveConnect(false); });
     $("btnReconnect").addEventListener("click", function () { driveConnect(false); });
+    $("admChangerCompte").addEventListener("click", function () {
+      LS.setRaw(KEY_DRIVEHINT, "");
+      drive.tokenClient = null; initDrive();
+      renderClassAdmin();
+      setTimeout(function () { driveConnect("force"); }, 150);
+    });
+    $("btnReconnectCompte").addEventListener("click", function () {
+      LS.setRaw(KEY_DRIVEHINT, "");        // on repart sans indication : Google propose la liste
+      drive.tokenClient = null; initDrive();
+      setTimeout(function () { driveConnect("force"); }, 150);
+    });
     /* Le bouton n'ouvre plus un compteur : il montre la séance en cours et permet d'en
        choisir une autre dans le calendrier de la classe (rattrapage). */
     $("btnSeance").addEventListener("click", function () {
