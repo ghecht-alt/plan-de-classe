@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QCM vers Google Forms</title>
+<style>
+  :root {
+    --fond: #f4f3ef;
+    --carte: #ffffff;
+    --encre: #1d2330;
+    --doux: #5a6272;
+    --trait: #dcdad3;
+    --trait-fort: #c4c1b8;
+    --accent: #2f5bd3;
+    --accent-fonce: #2448ad;
+    --accent-pale: #e8eefc;
+    --ok: #1e7a4c;
+    --ok-pale: #e3f3ea;
+    --att: #a35c00;
+    --att-pale: #fdf0dc;
+    --err: #b42318;
+    --err-pale: #fde7e5;
+    --ombre: 0 1px 2px rgba(20, 24, 35, .06), 0 4px 14px rgba(20, 24, 35, .05);
+    --rayon: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fond: #15171c;
+      --carte: #1e2128;
+      --encre: #e8eaf0;
+      --doux: #a2a9b8;
+      --trait: #343843;
+      --trait-fort: #484d5a;
+      --accent: #7a9cf5;
+      --accent-fonce: #9db6f8;
+      --accent-pale: #26304a;
+      --ok: #5cc995;
+      --ok-pale: #1d3329;
+      --att: #f0b357;
+      --att-pale: #3a2d17;
+      --err: #f28b82;
+      --err-pale: #3d1f1d;
+      --ombre: 0 1px 2px rgba(0, 0, 0, .3);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--fond);
+    color: var(--encre);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  .page { max-width: 1040px; margin: 0 auto; padding: 20px 16px 60px; }
+  h1, h2, h3 { line-height: 1.25; margin: 0; }
+  h1 { font-size: 22px; letter-spacing: -.01em; }
+  h2 { font-size: 17px; margin-bottom: 4px; }
+  h3 { font-size: 15px; }
+  p { margin: 0; }
+  .doux { color: var(--doux); }
+  .petit { font-size: 13px; }
+
+  /* En-tête */
+  .entete { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+  .marque { display: flex; align-items: center; gap: 12px; }
+  .logo { width: 40px; height: 40px; border-radius: 10px; background: var(--accent); display: grid; place-items: center; flex: none; }
+  .logo svg { width: 22px; height: 22px; }
+  .compte { font-size: 13px; color: var(--doux); background: var(--carte); border: 1px solid var(--trait); border-radius: 999px; padding: 5px 12px; }
+  .compte:empty { display: none; }
+
+  /* Étapes */
+  .etapes { display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
+  .etape-btn {
+    display: flex; align-items: center; gap: 8px; border: 1px solid var(--trait); background: var(--carte);
+    border-radius: 999px; padding: 6px 14px 6px 6px; font: inherit; font-size: 14px; color: var(--doux); cursor: pointer;
+  }
+  .etape-btn:disabled { cursor: default; opacity: .55; }
+  .etape-btn .rond { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--fond); font-size: 12px; font-weight: 600; }
+  .etape-btn.actif { border-color: var(--accent); color: var(--encre); font-weight: 600; }
+  .etape-btn.actif .rond { background: var(--accent); color: #fff; }
+  .etape-btn.fait .rond { background: var(--ok-pale); color: var(--ok); }
+
+  /* Cartes et champs */
+  .carte { background: var(--carte); border: 1px solid var(--trait); border-radius: var(--rayon); padding: 20px; box-shadow: var(--ombre); }
+  .pile > * + * { margin-top: 14px; }
+  .grille-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 760px) { .grille-2 { grid-template-columns: 1fr; } }
+  label.champ { display: block; }
+  label.champ > span { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+  input[type=text], input[type=number], textarea, select {
+    width: 100%; font: inherit; color: var(--encre); background: var(--carte);
+    border: 1px solid var(--trait-fort); border-radius: 8px; padding: 8px 10px;
+  }
+  textarea { resize: vertical; }
+  input:focus, textarea:focus, select:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .zone-texte { min-height: 300px; font-family: ui-monospace, "Cascadia Mono", Consolas, "Liberation Mono", monospace; font-size: 13.5px; line-height: 1.55; }
+  .case { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+  .case input { width: 16px; height: 16px; accent-color: var(--accent); }
+
+  /* Boutons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: inherit; font-size: 14px; font-weight: 600;
+    border-radius: 8px; padding: 9px 16px; border: 1px solid var(--trait-fort); background: var(--carte); color: var(--encre); cursor: pointer;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-primaire { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-primaire:hover { background: var(--accent-fonce); border-color: var(--accent-fonce); }
+  .btn-lien { background: none; border: none; color: var(--accent); padding: 4px 6px; font-weight: 600; }
+  .btn-lien:hover { text-decoration: underline; }
+  .btn-danger { color: var(--err); }
+  .barre { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .barre .espace { flex: 1; }
+
+  /* Dépôt de fichier */
+  .depot {
+    border: 2px dashed var(--trait-fort); border-radius: 10px; padding: 18px; text-align: center; cursor: pointer;
+    background: var(--fond); transition: border-color .15s, background .15s;
+  }
+  .depot.survol { border-color: var(--accent); background: var(--accent-pale); }
+  .depot strong { color: var(--accent); }
+  .etat-import { font-size: 13px; }
+  .etat-import:empty { display: none; }
+
+  /* Messages */
+  .msg { border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+  .msg-info { background: var(--accent-pale); }
+  .msg-ok { background: var(--ok-pale); color: var(--ok); }
+  .msg-att { background: var(--att-pale); color: var(--att); }
+  .msg-err { background: var(--err-pale); color: var(--err); }
+  .msg ul { margin: 6px 0 0; padding-left: 20px; }
+  .cache { display: none !important; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details.aide { font-size: 14px; }
+  details.aide pre { background: var(--fond); border: 1px solid var(--trait); border-radius: 8px; padding: 12px; overflow: auto; font-size: 12.5px; }
+  details.aide ul { padding-left: 20px; margin: 8px 0; }
+
+  /* Étape 2 */
+  .q-layout { display: grid; grid-template-columns: 230px 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 760px) { .q-layout { grid-template-columns: 1fr; } }
+  .navq { position: sticky; top: 12px; }
+  .pastilles { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .pastille {
+    width: 36px; height: 36px; border-radius: 8px; border: 1.5px solid var(--trait-fort); background: var(--carte);
+    font: inherit; font-size: 13px; font-weight: 600; color: var(--doux); cursor: pointer; position: relative;
+  }
+  .pastille.vue { color: var(--encre); }
+  .pastille.ok.vue { background: var(--ok-pale); border-color: var(--ok); color: var(--ok); }
+  .pastille.attention { border-color: var(--att); }
+  .pastille.attention.vue { background: var(--att-pale); color: var(--att); }
+  .pastille.erreur { border-color: var(--err); }
+  .pastille.erreur.vue { background: var(--err-pale); color: var(--err); }
+  .pastille.actif { outline: 2.5px solid var(--accent); outline-offset: 2px; }
+  .legende { display: grid; gap: 4px; margin-top: 12px; font-size: 12px; color: var(--doux); }
+  .legende i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .compteur { font-size: 13px; color: var(--doux); }
+  .q-tete { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .q-num { font-size: 13px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .04em; }
+  .reglages { display: grid; grid-template-columns: 1.4fr .6fr auto; gap: 12px; align-items: end; }
+  @media (max-width: 560px) { .reglages { grid-template-columns: 1fr 1fr; } }
+  .options { display: grid; gap: 8px; }
+  .option { display: grid; grid-template-columns: 34px 26px 1fr 34px; gap: 8px; align-items: center; }
+  .marque-bonne {
+    width: 34px; height: 34px; border: 1.5px solid var(--trait-fort); background: var(--carte); cursor: pointer;
+    display: grid; place-items: center; color: transparent; padding: 0;
+  }
+  .marque-bonne.rond { border-radius: 50%; }
+  .marque-bonne.carre { border-radius: 7px; }
+  .marque-bonne[aria-pressed="true"] { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .marque-bonne svg { width: 18px; height: 18px; }
+  .lettre { font-weight: 700; color: var(--doux); text-align: center; font-size: 14px; }
+  .option.bonne input { border-color: var(--ok); background: var(--ok-pale); }
+  .suppr { width: 34px; height: 34px; border-radius: 8px; border: 1px solid transparent; background: none; color: var(--doux); cursor: pointer; font-size: 18px; line-height: 1; }
+  .suppr:hover { border-color: var(--trait-fort); color: var(--err); }
+  .notes-q { font-size: 13px; }
+  .notes-q li + li { margin-top: 2px; }
+  .raccourcis { font-size: 12px; color: var(--doux); }
+  @media (max-width: 760px) { .raccourcis { display: none; } }
+  kbd { font: 11px ui-monospace, Consolas, monospace; border: 1px solid var(--trait-fort); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; background: var(--carte); }
+
+  /* Étape 3 */
+  table.recap { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.recap th, table.recap td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--trait); vertical-align: top; }
+  table.recap th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--doux); }
+  table.recap tr.cliquable { cursor: pointer; }
+  table.recap tr.cliquable:hover td { background: var(--fond); }
+  .tableau { overflow-x: auto; }
+  .etiquette { display: inline-block; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+  .etiquette.ok { background: var(--ok-pale); color: var(--ok); }
+  .etiquette.attention { background: var(--att-pale); color: var(--att); }
+  .etiquette.erreur { background: var(--err-pale); color: var(--err); }
+  .total { display: flex; gap: 24px; flex-wrap: wrap; }
+  .total div { min-width: 120px; }
+  .total b { display: block; font-size: 26px; line-height: 1.1; }
+  .liens-resultat { display: flex; gap: 10px; flex-wrap: wrap; }
+  .liens-resultat a { text-decoration: none; }
+  .tournant { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: tourne .8s linear infinite; }
+  @keyframes tourne { to { transform: rotate(360deg); } }
+  .toast {
+    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--encre); color: var(--carte);
+    padding: 10px 16px; border-radius: 8px; font-size: 14px; box-shadow: var(--ombre); z-index: 10; max-width: calc(100% - 32px);
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="entete">
+    <div class="marque">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h1M12 8h4M8 12h1M12 12h4M8 16h1M12 16h4"/></svg>
+      </div>
+      <div>
+        <h1>QCM vers Google Forms</h1>
+        <p class="doux petit">Importez un QCM, validez chaque question, créez le questionnaire noté.</p>
+      </div>
+    </div>
+    <div class="compte" id="compte"></div>
+  </header>
+
+  <nav class="etapes" aria-label="Étapes">
+    <button class="etape-btn" data-etape="1"><span class="rond">1</span>Texte du QCM</button>
+    <button class="etape-btn" data-etape="2"><span class="rond">2</span>Questions</button>
+    <button class="etape-btn" data-etape="3"><span class="rond">3</span>Création du formulaire</button>
+  </nav>
+
+  <div id="bandeau-local" class="msg msg-att cache" style="margin-bottom:14px">
+    Aperçu local : l'import et l'analyse fonctionnent, mais la création du Google Form n'est possible
+    qu'une fois le script déployé dans Google Apps Script.
+  </div>
+
+  <!-- ÉTAPE 1 -->
+  <section id="etape1" class="pile">
+    <div id="reprise" class="msg msg-info cache"></div>
+
+    <div class="carte pile">
+      <h2>Formulaire</h2>
+      <div class="grille-2">
+        <label class="champ"><span>Titre du Google Form</span>
+          <input type="text" id="titre" placeholder="Ex. : QCM - L'énergie électrique (4e)">
+        </label>
+        <label class="champ"><span>Description (facultatif)</span>
+          <input type="text" id="description" placeholder="Consignes affichées en haut du formulaire">
+        </label>
+      </div>
+    </div>
+
+    <div class="carte pile">
+      <div>
+        <h2>Contenu du QCM</h2>
+        <p class="doux petit">Importez un fichier .docx, .pdf ou .txt, ou collez le texte. Le texte extrait reste modifiable avant l'analyse.</p>
+      </div>
+      <div class="depot" id="depot" tabindex="0" role="button" aria-label="Importer un fichier">
+        <strong>Choisir un fichier</strong> <span class="doux">ou le déposer ici</span>
+        <div class="doux petit">Word (.docx), PDF texte (.pdf), texte (.txt)</div>
+        <input type="file" id="fichier" accept=".docx,.pdf,.txt,.md,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="cache">
+      </div>
+      <div class="etat-import" id="etat-import"></div>
+      <textarea id="texte" class="zone-texte" spellcheck="false" placeholder="Collez ici le texte du QCM..."></textarea>
+
+      <details class="aide">
+        <summary>Formats reconnus</summary>
+        <ul>
+          <li><b>Questions</b> : <code>1.</code> <code>1)</code> <code>Q1</code> <code>Question 1 :</code> (ou blocs séparés par une ligne vide)</li>
+          <li><b>Propositions</b> : <code>a)</code> <code>A.</code> <code>(a)</code> <code>-</code> <code>•</code> <code>☐</code> <code>[ ]</code>, y compris plusieurs sur une même ligne</li>
+          <li><b>Bonne réponse</b> : <code>*</code>, <code>[x]</code>, <code>☑</code> ou <code>✓</code> devant ou derrière la proposition ; ligne <code>Réponse : B</code> ; corrigé final <code>Corrigé : 1-B, 2-AC</code> ; propositions en gras dans un Word</li>
+          <li><b>Barème</b> : <code>(2 pts)</code> dans l'énoncé</li>
+          <li><b>Vrai / Faux</b> : énoncé contenant « vrai ou faux », propositions créées automatiquement</li>
+        </ul>
+        <pre id="exemple">1. Quelle est l'unité de la tension électrique ? (1 pt)
+a) Le watt
+b) Le volt *
+c) L'ampère
+
+2. Quels matériaux sont conducteurs ? (2 pts)
+[x] Le cuivre
+[ ] Le bois
+[x] L'aluminium
+
+3. Citez une source d'énergie renouvelable.
+Réponse : le solaire
+
+4. Une pile transforme de l'énergie chimique en énergie électrique. Vrai ou faux ?
+Réponse : V</pre>
+        <button type="button" class="btn-lien" id="inserer-exemple">Insérer cet exemple</button>
+      </details>
+    </div>
+
+    <div class="carte pile">
+      <h2>Valeurs par défaut</h2>
+      <p class="doux petit">Appliquées à chaque question détectée ; vous les ajustez ensuite question par question.</p>
+      <div class="reglages" style="grid-template-columns: 1.4fr .6fr auto">
+        <label class="champ"><span>Type de question</span><select id="def-type"></select></label>
+        <label class="champ"><span>Points</span><input type="number" id="def-points" min="0" step="1" value="1"></label>
+        <label class="case" style="padding-bottom:9px"><input type="checkbox" id="def-oblig" checked> Obligatoire</label>
+      </div>
+    </div>
+
+    <div class="barre">
+      <span class="espace"></span>
+      <span id="confirm-analyse" class="petit doux cache">Une nouvelle analyse remplace les questions déjà vérifiées.</span>
+      <button class="btn btn-primaire" id="analyser">Analyser le QCM</button>
+    </div>
+    <div id="msg-analyse"></div>
+  </section>
+
+  <!-- ÉTAPE 2 -->
+  <section id="etape2" class="cache">
+    <div id="synthese" class="pile" style="margin-bottom:14px"></div>
+    <div class="q-layout">
+      <aside class="carte navq">
+        <div class="compteur" id="compteur"></div>
+        <div class="pastilles" id="pastilles"></div>
+        <div class="legende">
+          <span><i style="background:var(--ok-pale);border:1.5px solid var(--ok)"></i>Prête</span>
+          <span><i style="background:var(--att-pale);border:1.5px solid var(--att)"></i>À vérifier</span>
+          <span><i style="background:var(--err-pale);border:1.5px solid var(--err)"></i>Bloquante</span>
+          <span><i style="background:var(--carte);border:1.5px solid var(--trait-fort)"></i>Pas encore ouverte</span>
+        </div>
+        <div style="margin-top:14px"><button class="btn" id="vers-recap" style="width:100%">Récapitulatif</button></div>
+      </aside>
+      <div class="carte pile" id="editeur"></div>
+    </div>
+  </section>
+
+  <!-- ÉTAPE 3 -->
+  <section id="etape3" class="pile cache">
+    <div class="carte pile" id="recap"></div>
+    <div class="carte pile" id="envoi"></div>
+    <div id="resultat"></div>
+  </section>
+</div>
+
+<div id="toast" class="toast cache" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.13.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script>
+/* ======================================================================
+ * <ANALYSEUR> : découpe un texte de QCM en questions (fonctions pures)
+ * ==================================================================== */
+var QCM = (function () {
+  'use strict';
+  var LETTRES = 'abcdefgh';
+  var TYPES_CHOIX = ['CHOIX_MULTIPLES', 'CASES_A_COCHER', 'LISTE_DEROULANTE'];
+
+  var RE_Q_MOT = /^(?:question|q)\s*(?:n\s*[°o]\s*)?(\d{1,3})\s*[.):\-\u2013\u2014]?\s*(.*)$/i;
+  var RE_Q_NUM = /^(\d{1,3})\s*(?:[.)](?!\d)|°\)?|[\-\u2013\u2014](?=\s))\s*(.*)$/;
+  var RE_LETTRE = /^[(\[]?([a-hA-H])\s*(?:[)\]]|[.:\-\u2013\u2014](?=\s|$))\s*(.*)$/;
+  var RE_NUM_OPTION = /^(\d{1,2})\s*(?:[)\]]|[.:\-\u2013\u2014](?=\s))\s*(.*)$/;
+  var CORRECT_TETE = /^(\*|\+|✓|✔|✅|☑|☒|\[\s*[xX✓✔]\s*\]|\(\s*[xX✓✔]\s*\))\s*/;
+  var VIDE_TETE = /^(☐|□|○|◯|❏|\[\s*\]|\(\s*\))\s*/;
+  var PUCE = /^([\-\u2013•◦▪●■▸►‣⁃>])\s+/;
+  var CORRECT_FIN = /\s*(?:\*+|\(\s*[xX✓✔]\s*\)|\[\s*[xX✓✔]\s*\]|✓|✔|✅|☑|\(\s*(?:bonne\s+r[ée]ponse|r[ée]ponse\s+correcte|correcte?|juste|vrai)\s*\)|<[-=]+|←|⇐)\s*$/i;
+  var RE_ENTETE = /^(?:corrig[ée]s?|r[ée]ponses|solutions?|cl[ée]s?\s+de\s+correction|grille\s+de\s+correction)(?:\s+(?:du|de\s+la|des)\s+\S+)?\s*:?\s*(.*)$/i;
+  var RE_REPONSE = /^(?:bonnes?\s+r[ée]ponses?|r[ée]ponses?(?:\s+(?:attendues?|correctes?|justes?))?|solution|corrig[ée])\s*[:=\-\u2013\u2014]\s*(.*)$/i;
+  var RE_POINTS = /\s*[(\[]\s*(\d+(?:[.,]\d+)?)\s*(?:pts?|points?)\.?\s*[)\]]\s*/i;
+  var RE_MULTI = /plusieurs\s+(?:bonnes\s+)?r[ée]ponses|une\s+ou\s+plusieurs|cochez\s+(?:toutes\s+)?les\s+(?:bonnes\s+)?r[ée]ponses/i;
+  var RE_VF = /vrai\s*(?:ou|\/)\s*faux|\(\s*v\s*\/\s*f\s*\)|\bv\s*\/\s*f\b/i;
+
+  function nettoyer(l) {
+    return String(l).replace(/[    \t]/g, ' ').replace(/[​﻿]/g, '').replace(/\s+/g, ' ').trim();
+  }
+
+  function normaliser(s) {
+    return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+
+  /* Sépare les lignes contenant plusieurs propositions (« a) Oui b) Non », « ☐ Oui ☐ Non »). */
+  function eclater(l) {
+    var cases = l.match(/[☐□☑☒○◯]/g);
+    if (cases && cases.length >= 2) {
+      return l.split(/(?=[☐□☑☒○◯])/).map(nettoyer).filter(Boolean);
+    }
+    var re = /(^|\s)\(?([a-hA-H])[).]\s/g, m, pos = [];
+    while ((m = re.exec(l))) {
+      pos.push({ i: m.index + m[1].length, c: m[2] });
+      re.lastIndex = m.index + m[0].length - 1;
+    }
+    var meilleure = [];
+    for (var k = 0; k < pos.length; k++) {
+      if (!(pos[k].c === 'a' || pos[k].c === 'A' || pos[k].i === 0)) continue;
+      var suite = [pos[k]];
+      var attendu = String.fromCharCode(pos[k].c.charCodeAt(0) + 1);
+      for (var j = k + 1; j < pos.length; j++) {
+        if (pos[j].c === attendu) { suite.push(pos[j]); attendu = String.fromCharCode(attendu.charCodeAt(0) + 1); }
+      }
+      if (suite.length > meilleure.length) meilleure = suite;
+    }
+    if (meilleure.length >= 2) {
+      /* Garde-fou : « comparer (a) et (b) » n'est pas une liste de propositions. */
+      for (var s = 0; s < meilleure.length; s++) {
+        var finSeg = s + 1 < meilleure.length ? meilleure[s + 1].i : l.length;
+        var contenu = l.slice(meilleure[s].i, finSeg).replace(/^\(?[a-hA-H][).]\s*/, '').trim();
+        if (/^(?:et|ou|puis|avec|ainsi que|&|,)?$/i.test(contenu)) return [l];
+      }
+      var res = [], debut = 0;
+      meilleure.forEach(function (p) {
+        if (p.i > debut) res.push(l.slice(debut, p.i));
+        debut = p.i;
+      });
+      res.push(l.slice(debut));
+      return res.map(nettoyer).filter(Boolean);
+    }
+    return [l];
+  }
+
+  /* Reconnaît une ligne de proposition. Renvoie null si la ligne n'en est pas une. */
+  function lireOption(ligne, numeriqueOK) {
+    var s = ligne, tete = null, m;
+    if ((m = s.match(CORRECT_TETE))) { tete = m[1].replace(/\s/g, ''); s = s.slice(m[0].length); }
+    else if ((m = s.match(VIDE_TETE))) { tete = 'vide'; s = s.slice(m[0].length); }
+    var lettre = null;
+    if ((m = s.match(RE_LETTRE))) { lettre = m[1].toLowerCase(); s = m[2]; }
+    else if (numeriqueOK && (m = s.match(RE_NUM_OPTION))) { lettre = '#' + m[1]; s = m[2]; }
+    if (lettre && !tete) {
+      if ((m = s.match(CORRECT_TETE))) { tete = m[1].replace(/\s/g, ''); s = s.slice(m[0].length); }
+      else if ((m = s.match(VIDE_TETE))) { tete = 'vide'; s = s.slice(m[0].length); }
+    }
+    var puce = null;
+    if (!lettre && !tete && (m = s.match(PUCE))) { puce = m[1]; s = s.slice(m[0].length); }
+    if (!lettre && !tete && !puce) return null;
+    var fin = false;
+    if ((m = s.match(CORRECT_FIN)) && m.index > 0) { fin = true; s = s.slice(0, m.index); }
+    return { texte: s.trim(), lettre: lettre, tete: tete, fin: fin, puce: puce };
+  }
+
+  /* « B », « A, C », « a et c », « AC » : renvoie ['b'] / ['a','c'] ou null. */
+  function ensembleLettres(s, strict) {
+    var t = String(s).trim().replace(/[.;,]+$/, '').trim();
+    if (!t) return null;
+    if (/^[A-H]{1,8}$/.test(t)) return t.toLowerCase().split('');
+    if (!strict && /^[a-h]$/.test(t)) return [t];
+    if (/^[A-Ha-h](?:\s*(?:,|;|&|\/|\+|\bet\b|\s)\s*[A-Ha-h])+$/.test(t)) {
+      return t.replace(/\bet\b/g, ' ').match(/[A-Ha-h]/g).map(function (c) { return c.toLowerCase(); });
+    }
+    return null;
+  }
+
+  /* Ligne de corrigé : « 1-B, 2-AC, 3 : a et c » */
+  function lireCles(l) {
+    var re = /(\d{1,3})\s*(?:[.):=\-\u2013\u2014]\s*|\s+(?=(?:[A-Ha-h]|[A-H]{2,8})(?:\b|$)))/g;
+    var marques = [], m;
+    while ((m = re.exec(l))) marques.push({ num: +m[1], debut: m.index, fin: m.index + m[0].length });
+    if (!marques.length || l.slice(0, marques[0].debut).trim()) return null;
+    var cles = [];
+    marques.forEach(function (mk, k) {
+      var fin = k + 1 < marques.length ? marques[k + 1].debut : l.length;
+      var v = l.slice(mk.fin, fin).replace(/[\s,;|]+$/, '').trim();
+      if (v) cles.push({ num: mk.num, valeur: v });
+    });
+    return cles.length ? cles : null;
+  }
+
+  function lireQuestion(l, styleMot) {
+    var m = l.match(RE_Q_MOT);
+    if (m) return { num: +m[1], texte: m[2].trim() };
+    if (!styleMot && (m = l.match(RE_Q_NUM))) return { num: +m[1], texte: m[2].trim() };
+    return null;
+  }
+
+  function ajouterReponse(q, v) {
+    v = String(v || '').trim();
+    if (!v || /^[_.…\s\-]*$/.test(v)) return;
+    q.reponses.push(v);
+  }
+
+  function decouperNumerote(lignes, styleMot, res) {
+    var qs = [], cour = null, corrige = false, cles = [];
+    lignes.forEach(function (l) {
+      if (!l) { if (cour) cour.blanc = true; return; }
+      var m = l.match(RE_ENTETE);
+      if (m) {
+        var reste = (m[1] || '').trim();
+        if (!reste || /\d\s*[.):=\-\u2013\u2014]\s*\S/.test(reste)) {
+          corrige = true;
+          var c0 = reste && lireCles(reste);
+          if (c0) cles = cles.concat(c0);
+          return;
+        }
+      }
+      if (corrige) {
+        var c = lireCles(l);
+        if (c) { cles = cles.concat(c); return; }
+      }
+      if (cour && (m = l.match(RE_REPONSE))) { ajouterReponse(cour, m[1]); return; }
+      var cl = qs.length ? lireCles(l) : null;
+      if (cl && cl.length >= 2 && cl.every(function (x) { return ensembleLettres(x.valeur, true); })) {
+        cles = cles.concat(cl);
+        return;
+      }
+      var q = lireQuestion(l, styleMot);
+      if (q) {
+        var deja = qs.some(function (x) { return x.num === q.num; });
+        if (deja && ensembleLettres(q.texte, true)) { cles.push({ num: q.num, valeur: q.texte }); return; }
+        cour = { num: q.num, titre: q.texte ? [q.texte] : [], options: [], reponses: [], blanc: false };
+        qs.push(cour);
+        corrige = false;
+        return;
+      }
+      if (!cour) { res.preambule.push(l); return; }
+      var o = lireOption(l, styleMot);
+      if (o) { cour.options.push(o); cour.blanc = false; return; }
+      if (!cour.options.length) { cour.titre.push(l); return; }
+      var der = cour.options[cour.options.length - 1];
+      if (!cour.blanc && /^[a-zà-ÿ0-9(«"']/.test(l)) { der.texte = (der.texte + ' ' + l).trim(); return; }
+      res.ignorees.push(l);
+    });
+    /* Question numérotée suivie de propositions sans marqueur (une par ligne). */
+    qs.forEach(function (q) {
+      if (q.options.length || q.titre.length < 3) return;
+      var k = -1;
+      for (var i = 0; i < q.titre.length - 2; i++) { if (/[?:]\s*$/.test(q.titre[i])) { k = i; break; } }
+      if (k < 0) return;
+      var reste = q.titre.slice(k + 1);
+      if (reste.some(function (x) { return /\?\s*$/.test(x) || x.length > 150; })) return;
+      q.titre = q.titre.slice(0, k + 1);
+      q.options = reste.map(function (x) {
+        var f = x.match(CORRECT_FIN), texte = x, ok = false;
+        if (f && f.index > 0) { texte = x.slice(0, f.index); ok = true; }
+        return { texte: texte.trim(), lettre: null, tete: null, fin: ok, puce: null };
+      });
+    });
+    cles.forEach(function (cle) {
+      var cibles = qs.filter(function (x) { return x.num === cle.num; });
+      var cible = cibles.length === 1 ? cibles[0] : qs[cle.num - 1];
+      if (cible) cible.reponses.push(cle.valeur);
+      else res.notes.push('Corrigé : la question ' + cle.num + ' est introuvable.');
+    });
+    if (cles.length) res.notes.push('Corrigé lu pour ' + cles.length + ' question' + (cles.length > 1 ? 's' : '') + '.');
+    return qs;
+  }
+
+  function decouperBlocs(lignes, res) {
+    var qs = [], cour = null;
+    function nouvelle(t) {
+      cour = { num: qs.length + 1, titre: t ? [t] : [], options: [], reponses: [], brutes: [], fermee: false };
+      qs.push(cour);
+    }
+    lignes.forEach(function (l) {
+      if (!l) { if (cour) cour.fermee = true; return; }
+      var m;
+      if (cour && !cour.fermee && (m = l.match(RE_REPONSE))) { ajouterReponse(cour, m[1]); return; }
+      var o = lireOption(l, false);
+      if (o) {
+        if (!cour || cour.fermee) nouvelle('');
+        cour.options.push(o);
+        return;
+      }
+      if (!cour || cour.fermee || cour.options.length) { nouvelle(l); return; }
+      cour.brutes.push(l);
+    });
+    qs.forEach(function (q) {
+      if (!q.brutes.length) return;
+      if (q.options.length) { q.titre = q.titre.concat(q.brutes); return; }
+      var tout = q.titre.concat(q.brutes);
+      var k = -1;
+      for (var i = 0; i < tout.length; i++) { if (/[?:]\s*$/.test(tout[i])) { k = i; break; } }
+      if (k < 0) k = 0;
+      q.titre = tout.slice(0, k + 1);
+      q.options = tout.slice(k + 1).map(function (x) {
+        var f = x.match(CORRECT_FIN), texte = x, ok = false;
+        if (f && f.index > 0) { texte = x.slice(0, f.index); ok = true; }
+        return { texte: texte.trim(), lettre: null, tete: null, fin: ok, puce: null };
+      });
+    });
+    return qs;
+  }
+
+  function marquerReponse(opts, r) {
+    var v = String(r).trim().replace(/[.;,]+$/, '').trim();
+    var idx, ok = false;
+    var lettres = ensembleLettres(v, false);
+    if (lettres) {
+      lettres.forEach(function (c) {
+        idx = -1;
+        for (var i = 0; i < opts.length; i++) if (opts[i].lettre === c) { idx = i; break; }
+        if (idx < 0) idx = LETTRES.indexOf(c);
+        if (idx >= 0 && idx < opts.length) { opts[idx].correct = true; ok = true; }
+      });
+      if (ok) return true;
+    }
+    if (/^\d{1,2}(?:\s*(?:,|;|\bet\b|\s)\s*\d{1,2})*$/.test(v)) {
+      v.match(/\d{1,2}/g).forEach(function (n) {
+        idx = -1;
+        for (var i = 0; i < opts.length; i++) if (opts[i].lettre === '#' + n) { idx = i; break; }
+        if (idx < 0) idx = parseInt(n, 10) - 1;
+        if (idx >= 0 && idx < opts.length) { opts[idx].correct = true; ok = true; }
+      });
+      if (ok) return true;
+    }
+    var nv = normaliser(v);
+    if (nv === 'v' || nv === 'f') {
+      var cible = nv === 'v' ? 'vrai' : 'faux';
+      for (var a = 0; a < opts.length; a++) if (normaliser(opts[a].texte) === cible) { opts[a].correct = true; return true; }
+    }
+    for (var b = 0; b < opts.length; b++) if (normaliser(opts[b].texte) === nv) { opts[b].correct = true; return true; }
+    if (nv.length >= 3) {
+      for (var c2 = 0; c2 < opts.length; c2++) if (normaliser(opts[c2].texte).indexOf(nv) >= 0) { opts[c2].correct = true; return true; }
+    }
+    return false;
+  }
+
+  function finaliser(q, defauts, rang) {
+    var notes = [];
+    var titre = q.titre.join(' ').replace(/\s+/g, ' ').trim();
+    var points = defauts.points, mp = titre.match(RE_POINTS);
+    if (mp) {
+      var val = parseFloat(mp[1].replace(',', '.'));
+      titre = (titre.slice(0, mp.index) + ' ' + titre.slice(mp.index + mp[0].length)).replace(/\s+/g, ' ').trim();
+      if (Math.floor(val) === val) {
+        points = val;
+        notes.push('Barème lu dans le texte : ' + val + ' point' + (val > 1 ? 's' : '') + '.');
+      } else {
+        notes.push('Barème non entier dans le texte (' + mp[1] + ' pt) : Google Forms n\'accepte que des points entiers.');
+      }
+    }
+    var options = q.options.slice();
+    ['*', '+'].forEach(function (sym) {
+      if (options.length >= 2 && options.every(function (o) { return o.tete === sym; })) {
+        options.forEach(function (o) { o.tete = null; });
+      }
+    });
+    var opts = options.map(function (o) {
+      return { texte: o.texte, correct: !!(o.fin || (o.tete && o.tete !== 'vide')), lettre: o.lettre };
+    });
+    if (!opts.length && RE_VF.test(titre)) {
+      opts = [{ texte: 'Vrai', correct: false, lettre: 'a' }, { texte: 'Faux', correct: false, lettre: 'b' }];
+      notes.push('Propositions Vrai / Faux ajoutées automatiquement.');
+    }
+    var reponseAttendue = '';
+    q.reponses.forEach(function (r) {
+      if (!opts.length) { reponseAttendue = reponseAttendue ? reponseAttendue + ' ; ' + r : r; return; }
+      if (!marquerReponse(opts, r)) notes.push('Réponse « ' + r + ' » non retrouvée parmi les propositions : à cocher manuellement.');
+    });
+    var nbCorrect = opts.filter(function (o) { return o.correct; }).length;
+    var type = defauts.type;
+    if (!opts.length) {
+      type = 'REPONSE_COURTE';
+      if (defauts.type !== 'REPONSE_COURTE' && defauts.type !== 'PARAGRAPHE') notes.push('Aucune proposition détectée : type Réponse courte proposé.');
+      if (defauts.type === 'PARAGRAPHE') type = 'PARAGRAPHE';
+    } else if (nbCorrect >= 2 || RE_MULTI.test(titre)) {
+      if (defauts.type !== 'CASES_A_COCHER') {
+        notes.push(nbCorrect >= 2 ? 'Plusieurs bonnes réponses repérées : type Cases à cocher proposé.' : 'Énoncé à réponses multiples : type Cases à cocher proposé.');
+      }
+      type = 'CASES_A_COCHER';
+    } else if (TYPES_CHOIX.indexOf(defauts.type) < 0) {
+      type = 'CHOIX_MULTIPLES';
+    }
+    if (TYPES_CHOIX.indexOf(type) >= 0 && opts.length && !nbCorrect) notes.push('Aucune bonne réponse repérée dans le texte.');
+    var vus = {};
+    opts.forEach(function (o) {
+      var k = normaliser(o.texte);
+      if (k && vus[k]) notes.push('Proposition en double : « ' + o.texte + ' ».');
+      vus[k] = true;
+    });
+    if (!titre) notes.push('Énoncé non détecté : à saisir.');
+    return {
+      id: 'q' + Date.now().toString(36) + rang,
+      num: q.num,
+      titre: titre,
+      type: type,
+      points: points,
+      obligatoire: !!defauts.obligatoire,
+      options: opts.map(function (o) { return { texte: o.texte, correct: o.correct }; }),
+      reponseAttendue: reponseAttendue,
+      echelleMin: 1, echelleMax: 5, echelleLabelMin: '', echelleLabelMax: '',
+      notes: notes,
+      vue: false
+    };
+  }
+
+  function analyser(texte, defauts) {
+    defauts = defauts || { points: 1, type: 'CHOIX_MULTIPLES', obligatoire: true };
+    var lignes = [];
+    String(texte || '').replace(/\r\n?/g, '\n').split('\n').forEach(function (b) {
+      var l = nettoyer(b);
+      if (!l) { lignes.push(''); return; }
+      if (/^(?:page\s*)?\d+\s*(?:\/|sur)\s*\d+$/i.test(l) || /^[_.…\s\-]{3,}$/.test(l)) return;
+      eclater(l).forEach(function (x) { lignes.push(x); });
+    });
+    var styleMot = lignes.some(function (l) { return RE_Q_MOT.test(l); });
+    var numerote = styleMot || lignes.some(function (l) { return RE_Q_NUM.test(l); });
+    var res = { questions: [], preambule: [], ignorees: [], notes: [], mode: numerote ? 'numerote' : 'blocs' };
+    var brutes = numerote ? decouperNumerote(lignes, styleMot, res) : decouperBlocs(lignes, res);
+    res.questions = brutes.map(function (q, i) { return finaliser(q, defauts, i); });
+    return res;
+  }
+
+  return {
+    analyser: analyser, lireOption: lireOption, ensembleLettres: ensembleLettres,
+    lireCles: lireCles, eclater: eclater, normaliser: normaliser, nettoyer: nettoyer, TYPES_CHOIX: TYPES_CHOIX
+  };
+})();
+/* </ANALYSEUR> */
+
+/* ======================================================================
+ * <IMPORT> : extraction du texte des fichiers Word, PDF et texte
+ * ==================================================================== */
+var Import = (function () {
+  'use strict';
+  var LETTRES = 'abcdefgh';
+  var URL_WORKER_PDF = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+  function lireCommeTampon(fichier) {
+    return new Promise(function (ok, ko) {
+      var r = new FileReader();
+      r.onload = function () { ok(r.result); };
+      r.onerror = function () { ko(new Error('Lecture du fichier impossible.')); };
+      r.readAsArrayBuffer(fichier);
+    });
+  }
+
+  function lireCommeTexte(fichier, encodage) {
+    return new Promise(function (ok, ko) {
+      var r = new FileReader();
+      r.onload = function () { ok(r.result); };
+      r.onerror = function () { ko(new Error('Lecture du fichier impossible.')); };
+      r.readAsText(fichier, encodage);
+    });
+  }
+
+  async function texte(fichier) {
+    var t = await lireCommeTexte(fichier, 'utf-8');
+    if (t.indexOf('�') >= 0) t = await lireCommeTexte(fichier, 'windows-1252');
+    return { texte: t, notes: [] };
+  }
+
+  /* Symboles Wingdings utilisés pour les cases dans Word (zone privée Unicode). */
+  function symbolesWord(s) {
+    return s.replace(/[]/g, '☑ ').replace(/[]/g, '☐ ')
+      .replace(/[-]/g, '');
+  }
+
+  function texteHorsListes(el) {
+    var c = el.cloneNode(true);
+    Array.prototype.forEach.call(c.querySelectorAll('ol,ul'), function (x) { x.remove(); });
+    return symbolesWord(c.textContent || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function estGras(el) {
+    var c = el.cloneNode(true);
+    Array.prototype.forEach.call(c.querySelectorAll('ol,ul'), function (x) { x.remove(); });
+    var total = (c.textContent || '').replace(/\s/g, '');
+    if (!total) return false;
+    var gras = '';
+    Array.prototype.forEach.call(c.querySelectorAll('strong,b'), function (s) {
+      if (!s.parentElement.closest('strong,b') || s.parentElement === c) gras += s.textContent;
+    });
+    return gras.replace(/\s/g, '').length >= total.length;
+  }
+
+  async function word(fichier) {
+    if (typeof mammoth === 'undefined') throw new Error('Le module de lecture Word n\'a pas pu être chargé (réseau). Copiez-collez le texte à la place.');
+    var tampon = await lireCommeTampon(fichier);
+    var res = await mammoth.convertToHtml({ arrayBuffer: tampon }, { ignoreEmptyParagraphs: false });
+    var doc = new DOMParser().parseFromString('<div id="r">' + res.value + '</div>', 'text/html');
+    var racine = doc.getElementById('r');
+    var lignes = [], compteurQ = 0;
+
+    function liste(l, prof) {
+      var items = Array.prototype.filter.call(l.children, function (x) { return x.tagName === 'LI'; });
+      var imbrique = items.some(function (li) { return li.querySelector('ol,ul'); });
+      var interrog = items.filter(function (li) { return /[?:]\s*$/.test(texteHorsListes(li)); }).length;
+      var questions = prof === 0 && (imbrique || interrog >= Math.ceil(items.length / 2));
+      items.forEach(function (li, k) {
+        var t = texteHorsListes(li);
+        if (t) {
+          if (questions) { compteurQ++; lignes.push({ t: compteurQ + '. ' + t }); }
+          else lignes.push({ t: LETTRES[k % 8] + ') ' + t, gras: estGras(li) });
+        }
+        Array.prototype.forEach.call(li.children, function (sub) {
+          if (sub.tagName === 'OL' || sub.tagName === 'UL') liste(sub, prof + 1);
+        });
+      });
+    }
+
+    function bloc(n) {
+      var tag = n.tagName;
+      if (!tag) return;
+      if (tag === 'OL' || tag === 'UL') { liste(n, 0); return; }
+      if (tag === 'TABLE') {
+        Array.prototype.forEach.call(n.querySelectorAll('tr'), function (tr) {
+          Array.prototype.forEach.call(tr.children, function (td) {
+            var ps = td.querySelectorAll('p');
+            if (ps.length) Array.prototype.forEach.call(ps, function (p) { var t = symbolesWord(p.textContent).trim(); if (t) lignes.push({ t: t, gras: estGras(p) }); });
+            else { var t2 = symbolesWord(td.textContent).trim(); if (t2) lignes.push({ t: t2, gras: estGras(td) }); }
+          });
+          lignes.push({ t: '' });
+        });
+        return;
+      }
+      lignes.push({ t: symbolesWord(n.textContent || '').replace(/\s+/g, ' ').trim(), gras: estGras(n) });
+    }
+    Array.prototype.forEach.call(racine.children, bloc);
+
+    /* Lignes placées sous une question : propositions sans marqueur lettrées a), b)...
+       Propositions en gras : marquées comme bonnes réponses si seule une partie du groupe est en gras. */
+    var notes = [], groupe = [], marquees = 0, sousQuestion = false;
+    var RE_TETE_Q = /^(?:(?:question|q)\s*\d{1,3}|\d{1,3}\s*[.)](?!\d))/i;
+    function fermer() {
+      if (groupe.length) {
+        var formatees = groupe.filter(function (x) { return QCM.lireOption(x.t, false); }).length;
+        if (!formatees && sousQuestion && groupe.length >= 2) {
+          groupe.forEach(function (x, k) { x.t = LETTRES[k % 8] + ') ' + x.t; });
+          formatees = groupe.length;
+        }
+        if (formatees === groupe.length) {
+          var nb = groupe.filter(function (x) { return x.gras; }).length;
+          if (nb > 0 && nb < groupe.length) {
+            groupe.forEach(function (x) { if (x.gras) { x.t = '* ' + x.t; marquees++; } });
+          }
+        }
+      }
+      groupe = [];
+    }
+    lignes.forEach(function (x) {
+      if (!x.t) { fermer(); sousQuestion = false; return; }
+      var estQuestion = RE_TETE_Q.test(x.t) || (/[?:]\s*$/.test(x.t) && !QCM.lireOption(x.t, false));
+      if (estQuestion) { fermer(); sousQuestion = true; return; }
+      if (/^(?:bonnes?\s+)?r[ée]ponses?\s*[:=]/i.test(x.t) || /^corrig[ée]/i.test(x.t)) { fermer(); sousQuestion = false; return; }
+      if (sousQuestion || QCM.lireOption(x.t, false)) groupe.push(x); else fermer();
+    });
+    fermer();
+    if (marquees) notes.push(marquees + ' proposition' + (marquees > 1 ? 's' : '') + ' en gras dans le Word marquée' + (marquees > 1 ? 's' : '') + ' comme bonne' + (marquees > 1 ? 's' : '') + ' réponse' + (marquees > 1 ? 's' : '') + ' (signalées par *). À vérifier.');
+    var sortie = lignes.map(function (x) { return x.t; }).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    return { texte: sortie, notes: notes };
+  }
+
+  async function pdf(fichier) {
+    if (typeof pdfjsLib === 'undefined') throw new Error('Le module de lecture PDF n\'a pas pu être chargé (réseau). Copiez-collez le texte à la place.');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = URL_WORKER_PDF;
+    var tampon = await lireCommeTampon(fichier);
+    var docPdf = await pdfjsLib.getDocument({ data: new Uint8Array(tampon) }).promise;
+    var sortie = [];
+    for (var p = 1; p <= docPdf.numPages; p++) {
+      var page = await docPdf.getPage(p);
+      var contenu = await page.getTextContent();
+      var lignes = [], cour = null, forcer = false;
+      contenu.items.forEach(function (it) {
+        if (typeof it.str !== 'string') return;
+        var x = it.transform[4], y = it.transform[5];
+        var h = Math.abs(it.transform[3]) || it.height || 10;
+        var nouvelle = !cour || forcer || Math.abs(y - cour.y) > h * 0.5;
+        forcer = !!it.hasEOL || (forcer && !it.str);
+        if (!it.str || (nouvelle && !it.str.trim())) return;
+        if (nouvelle) {
+          cour = { y: y, h: h, morceaux: [], xFin: null };
+          lignes.push(cour);
+        }
+        var dernier = cour.morceaux[cour.morceaux.length - 1];
+        if (dernier && cour.xFin !== null && x - cour.xFin > h * 0.2 && !/\s$/.test(dernier) && !/^\s/.test(it.str)) cour.morceaux.push(' ');
+        cour.morceaux.push(it.str);
+        cour.xFin = x + (it.width || 0);
+      });
+      var prec = null;
+      lignes.forEach(function (l) {
+        var t = l.morceaux.join('').replace(/\s+/g, ' ').trim();
+        if (!t) return;
+        if (prec && (prec.y - l.y) > prec.h * 1.9) sortie.push('');
+        sortie.push(t);
+        prec = l;
+      });
+      sortie.push('');
+    }
+    var texteFinal = sortie.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    if (!texteFinal) throw new Error('Ce PDF ne contient pas de texte exploitable (document scanné ?). Utilisez le fichier Word d\'origine ou copiez-collez le texte.');
+    return { texte: texteFinal, notes: ['Texte extrait du PDF : vérifiez les retours à la ligne avant l\'analyse.'] };
+  }
+
+  async function lire(fichier) {
+    var nom = (fichier.name || '').toLowerCase();
+    if (/\.docx$/.test(nom)) return word(fichier);
+    if (/\.pdf$/.test(nom)) return pdf(fichier);
+    if (/\.(txt|md|text)$/.test(nom) || /^text\//.test(fichier.type)) return texte(fichier);
+    if (/\.doc$/.test(nom)) throw new Error('Format .doc (Word 97-2003) non pris en charge : enregistrez le fichier au format .docx.');
+    if (/\.odt$/.test(nom)) throw new Error('Format .odt non pris en charge : enregistrez le fichier au format .docx.');
+    throw new Error('Format non reconnu. Formats acceptés : .docx, .pdf, .txt.');
+  }
+
+  return { lire: lire };
+})();
+/* </IMPORT> */
+
+/* ======================================================================
+ * Application
+ * ==================================================================== */
+(function () {
+  'use strict';
+
+  var TYPES = [
+    { id: 'CHOIX_MULTIPLES', label: 'Choix multiples', choix: true, unique: true },
+    { id: 'CASES_A_COCHER', label: 'Cases à cocher', choix: true, unique: false },
+    { id: 'LISTE_DEROULANTE', label: 'Liste déroulante', choix: true, unique: true },
+    { id: 'REPONSE_COURTE', label: 'Réponse courte' },
+    { id: 'PARAGRAPHE', label: 'Paragraphe' },
+    { id: 'ECHELLE_LINEAIRE', label: 'Échelle linéaire' },
+    { id: 'DATE', label: 'Date' },
+    { id: 'HEURE', label: 'Heure' }
+  ];
+  var LETTRES = 'abcdefgh';
+  var CLE_STOCKAGE = 'qcm-vers-google-forms-v1';
+  var APPS_SCRIPT = typeof google !== 'undefined' && google.script && google.script.run;
+
+  var etat = {
+    etape: 1, titre: '', description: '', texte: '', melanger: false, publier: false,
+    defauts: { points: 1, type: 'CHOIX_MULTIPLES', obligatoire: true },
+    questions: [], courant: 0, analyse: null, resultat: null, envoiEnCours: false, confirmeAlertes: false
+  };
+
+  /* ---------- utilitaires ---------- */
+  function $(id) { return document.getElementById(id); }
+  function el(tag, props, enfants) {
+    var e = document.createElement(tag);
+    if (props) Object.keys(props).forEach(function (k) {
+      var v = props[k];
+      if (v === null || v === undefined || v === false) return;
+      if (k === 'class') e.className = v;
+      else if (k === 'text') e.textContent = v;
+      else if (k === 'html') e.innerHTML = v;
+      else if (k.indexOf('on') === 0) e.addEventListener(k.slice(2), v);
+      else if (k === 'value') e.value = v;
+      else if (k === 'checked') e.checked = !!v;
+      else e.setAttribute(k, v === true ? '' : v);
+    });
+    (enfants || []).forEach(function (c) {
+      if (c === null || c === undefined || c === false) return;
+      e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    });
+    return e;
+  }
+  function typeInfo(id) { return TYPES.filter(function (t) { return t.id === id; })[0] || TYPES[0]; }
+  function pluriel(n, mot) { return n + ' ' + mot + (n > 1 ? 's' : ''); }
+  var minuteurToast;
+  function toast(msg) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.classList.remove('cache');
+    clearTimeout(minuteurToast);
+    minuteurToast = setTimeout(function () { t.classList.add('cache'); }, 3200);
+  }
+  var SVG_COCHE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+  /* ---------- sauvegarde locale (navigateur) ---------- */
+  var minuteurSauve = null;
+  function ecrire() {
+    minuteurSauve = null;
+    try {
+      localStorage.setItem(CLE_STOCKAGE, JSON.stringify({
+        titre: etat.titre, description: etat.description, texte: etat.texte, defauts: etat.defauts,
+        questions: etat.questions, courant: etat.courant, melanger: etat.melanger, publier: etat.publier, date: Date.now()
+      }));
+    } catch (e) { /* stockage indisponible : sans conséquence */ }
+  }
+  function sauver() {
+    clearTimeout(minuteurSauve);
+    minuteurSauve = setTimeout(ecrire, 400);
+  }
+  window.addEventListener('pagehide', function () { if (minuteurSauve) { clearTimeout(minuteurSauve); ecrire(); } });
+  function effacerSauvegarde() { try { localStorage.removeItem(CLE_STOCKAGE); } catch (e) { /* rien */ } }
+  function lireSauvegarde() {
+    try { var s = localStorage.getItem(CLE_STOCKAGE); return s ? JSON.parse(s) : null; } catch (e) { return null; }
+  }
+
+  /* ---------- diagnostic d'une question ---------- */
+  function diagnostic(q) {
+    var erreurs = [], alertes = [];
+    var t = typeInfo(q.type), p = Number(q.points);
+    if (!String(q.titre).trim()) erreurs.push('Énoncé vide.');
+    if (q.points === '' || !(p >= 0) || Math.floor(p) !== p) erreurs.push('Points : nombre entier positif ou nul attendu (contrainte Google Forms).');
+    if (t.choix) {
+      if (q.options.length < 2) erreurs.push('Au moins deux propositions sont nécessaires.');
+      if (q.options.some(function (o) { return !String(o.texte).trim(); })) erreurs.push('Une proposition est vide.');
+      var vus = {}, double = false;
+      q.options.forEach(function (o) {
+        var k = String(o.texte).trim();
+        if (k && vus[k]) double = true;
+        vus[k] = true;
+      });
+      if (double) erreurs.push('Deux propositions identiques (refusé par Google Forms).');
+      var nb = q.options.filter(function (o) { return o.correct; }).length;
+      if (!nb && p > 0) alertes.push('Aucune bonne réponse indiquée : la question rapportera 0 point à tous les élèves.');
+    }
+    if (q.type === 'REPONSE_COURTE' && p > 0 && !String(q.reponseAttendue || '').trim()) alertes.push('Réponse attendue non renseignée.');
+    if (q.type === 'ECHELLE_LINEAIRE') {
+      var mn = parseInt(q.echelleMin, 10), mx = parseInt(q.echelleMax, 10);
+      if (!(mn === 0 || mn === 1) || !(mx >= 3 && mx <= 10)) erreurs.push('Échelle : début 0 ou 1, fin entre 3 et 10.');
+    }
+    return { niveau: erreurs.length ? 'erreur' : (alertes.length ? 'attention' : 'ok'), erreurs: erreurs, alertes: alertes };
+  }
+
+  /* ---------- navigation ---------- */
+  function allerA(n) {
+    if (n > 1 && !etat.questions.length) return;
+    etat.etape = n;
+    rendre();
+    window.scrollTo(0, 0);
+  }
+  function rendreEtapes() {
+    Array.prototype.forEach.call(document.querySelectorAll('.etape-btn'), function (b) {
+      var n = +b.getAttribute('data-etape');
+      b.classList.toggle('actif', n === etat.etape);
+      b.classList.toggle('fait', n < etat.etape);
+      b.disabled = n > 1 && !etat.questions.length;
+    });
+    ['etape1', 'etape2', 'etape3'].forEach(function (id, i) { $(id).classList.toggle('cache', etat.etape !== i + 1); });
+  }
+  function rendre() {
+    rendreEtapes();
+    if (etat.etape === 2) rendreEtape2();
+    if (etat.etape === 3) rendreEtape3();
+  }
+
+  /* ---------- étape 1 ---------- */
+  function initEtape1() {
+    var sel = $('def-type');
+    TYPES.forEach(function (t) { sel.appendChild(el('option', { value: t.id, text: t.label })); });
+    sel.value = etat.defauts.type;
+
+    $('titre').addEventListener('input', function (e) { etat.titre = e.target.value; sauver(); });
+    $('description').addEventListener('input', function (e) { etat.description = e.target.value; sauver(); });
+    $('texte').addEventListener('input', function (e) { etat.texte = e.target.value; sauver(); });
+    sel.addEventListener('change', function (e) { etat.defauts.type = e.target.value; sauver(); });
+    $('def-points').addEventListener('input', function (e) { etat.defauts.points = e.target.value === '' ? '' : Number(e.target.value); sauver(); });
+    $('def-oblig').addEventListener('change', function (e) { etat.defauts.obligatoire = e.target.checked; sauver(); });
+    $('inserer-exemple').addEventListener('click', function () {
+      $('texte').value = $('exemple').textContent;
+      etat.texte = $('texte').value;
+      if (!etat.titre) { etat.titre = 'QCM - Exemple'; $('titre').value = etat.titre; }
+      sauver();
+    });
+
+    var depot = $('depot'), champ = $('fichier');
+    depot.addEventListener('click', function () { champ.click(); });
+    depot.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); champ.click(); } });
+    champ.addEventListener('change', function () { if (champ.files[0]) importer(champ.files[0]); champ.value = ''; });
+    ['dragenter', 'dragover'].forEach(function (ev) {
+      depot.addEventListener(ev, function (e) { e.preventDefault(); depot.classList.add('survol'); });
+    });
+    ['dragleave', 'drop'].forEach(function (ev) {
+      depot.addEventListener(ev, function (e) { e.preventDefault(); depot.classList.remove('survol'); });
+    });
+    depot.addEventListener('drop', function (e) { var f = e.dataTransfer.files[0]; if (f) importer(f); });
+
+    $('analyser').addEventListener('click', lancerAnalyse);
+  }
+
+  async function importer(fichier) {
+    var zone = $('etat-import');
+    zone.className = 'etat-import doux';
+    zone.textContent = 'Lecture de « ' + fichier.name + ' »...';
+    try {
+      var r = await Import.lire(fichier);
+      $('texte').value = r.texte;
+      etat.texte = r.texte;
+      if (!etat.titre.trim()) {
+        etat.titre = fichier.name.replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ').trim();
+        $('titre').value = etat.titre;
+      }
+      zone.className = 'etat-import';
+      zone.innerHTML = '';
+      zone.appendChild(el('div', { class: 'msg msg-ok', text: '« ' + fichier.name + ' » importé : ' + pluriel(r.texte.split('\n').filter(Boolean).length, 'ligne') + '. Relisez le texte puis lancez l\'analyse.' }));
+      r.notes.forEach(function (n) { zone.appendChild(el('div', { class: 'msg msg-att', style: 'margin-top:6px', text: n })); });
+      sauver();
+    } catch (err) {
+      zone.className = 'etat-import';
+      zone.innerHTML = '';
+      zone.appendChild(el('div', { class: 'msg msg-err', text: err.message || String(err) }));
+    }
+  }
+
+  var analyseAConfirmer = false;
+  function lancerAnalyse() {
+    var zoneMsg = $('msg-analyse');
+    zoneMsg.innerHTML = '';
+    if (!etat.texte.trim()) {
+      zoneMsg.appendChild(el('div', { class: 'msg msg-err', text: 'Aucun texte à analyser : importez un fichier ou collez le QCM.' }));
+      return;
+    }
+    var p = Number(etat.defauts.points);
+    if (etat.defauts.points === '' || !(p >= 0) || Math.floor(p) !== p) {
+      zoneMsg.appendChild(el('div', { class: 'msg msg-err', text: 'Points par défaut : nombre entier positif ou nul attendu.' }));
+      return;
+    }
+    if (etat.questions.length && etat.questions.some(function (q) { return q.vue; }) && !analyseAConfirmer) {
+      analyseAConfirmer = true;
+      $('confirm-analyse').classList.remove('cache');
+      $('analyser').textContent = 'Confirmer la nouvelle analyse';
+      return;
+    }
+    analyseAConfirmer = false;
+    $('confirm-analyse').classList.add('cache');
+    $('analyser').textContent = 'Analyser le QCM';
+
+    var res = QCM.analyser(etat.texte, { points: p, type: etat.defauts.type, obligatoire: etat.defauts.obligatoire });
+    if (!res.questions.length) {
+      zoneMsg.appendChild(el('div', { class: 'msg msg-err', text: 'Aucune question reconnue. Vérifiez la numérotation (1. / 1) / Q1) ou séparez les questions par une ligne vide.' }));
+      return;
+    }
+    if (!etat.titre.trim() && res.preambule.length && res.preambule[0].length < 120) {
+      etat.titre = res.preambule[0];
+      $('titre').value = etat.titre;
+    }
+    etat.questions = res.questions;
+    etat.analyse = { preambule: res.preambule, ignorees: res.ignorees, notes: res.notes, mode: res.mode };
+    etat.courant = 0;
+    etat.resultat = null;
+    etat.confirmeAlertes = false;
+    etat.questions[0].vue = true;
+    sauver();
+    allerA(2);
+  }
+
+  /* ---------- étape 2 ---------- */
+  function rendreSynthese() {
+    var z = $('synthese');
+    z.innerHTML = '';
+    if (!etat.analyse) return;
+    var a = etat.analyse;
+    var nbAtt = etat.questions.filter(function (q) { return diagnostic(q).niveau !== 'ok'; }).length;
+    var lignes = [pluriel(etat.questions.length, 'question') + ' détectée' + (etat.questions.length > 1 ? 's' : '') +
+      (a.mode === 'blocs' ? ' (questions non numérotées : découpage par blocs)' : '') + '.'];
+    a.notes.forEach(function (n) { lignes.push(n); });
+    var msg = el('div', { class: 'msg ' + (nbAtt ? 'msg-info' : 'msg-ok') }, [lignes.join(' ') + ' Ouvrez chaque question pour confirmer le type, les points et la bonne réponse.']);
+    z.appendChild(msg);
+    var autres = a.preambule.slice(etat.titre === a.preambule[0] ? 1 : 0).concat(a.ignorees);
+    if (autres.length) {
+      var det = el('details', { class: 'aide carte', style: 'padding:12px 16px' }, [
+        el('summary', { text: pluriel(autres.length, 'ligne') + ' non rattachée' + (autres.length > 1 ? 's' : '') + ' à une question (consignes, en-têtes...)' }),
+        el('ul', null, autres.map(function (l) { return el('li', { text: l }); }))
+      ]);
+      z.appendChild(det);
+    }
+  }
+
+  function rendrePastilles() {
+    var z = $('pastilles');
+    z.innerHTML = '';
+    var nbVues = 0;
+    etat.questions.forEach(function (q, i) {
+      var d = diagnostic(q);
+      if (q.vue) nbVues++;
+      z.appendChild(el('button', {
+        class: 'pastille ' + d.niveau + (q.vue ? ' vue' : '') + (i === etat.courant ? ' actif' : ''),
+        title: 'Question ' + (i + 1) + (d.erreurs.concat(d.alertes).length ? ' : ' + d.erreurs.concat(d.alertes).join(' ') : ''),
+        text: String(i + 1),
+        onclick: function () { ouvrir(i); }
+      }));
+    });
+    $('compteur').textContent = nbVues + ' / ' + etat.questions.length + ' questions vérifiées';
+  }
+
+  function ouvrir(i) {
+    if (i < 0 || i >= etat.questions.length) return;
+    etat.courant = i;
+    etat.questions[i].vue = true;
+    sauver();
+    rendreEtape2();
+  }
+
+  function rendreEtape2() {
+    if (!etat.questions.length) { allerA(1); return; }
+    if (etat.courant >= etat.questions.length) etat.courant = etat.questions.length - 1;
+    rendreSynthese();
+    rendrePastilles();
+    rendreEditeur();
+  }
+
+  function majEtatQuestion() {
+    rendrePastilles();
+    var q = etat.questions[etat.courant];
+    var zone = $('diag-q');
+    if (zone) remplirDiagnostic(zone, q);
+    sauver();
+  }
+
+  function remplirDiagnostic(zone, q) {
+    zone.innerHTML = '';
+    var d = diagnostic(q);
+    if (d.erreurs.length) zone.appendChild(el('div', { class: 'msg msg-err' }, [el('ul', { style: 'margin:0' }, d.erreurs.map(function (m) { return el('li', { text: m }); }))]));
+    if (d.alertes.length) zone.appendChild(el('div', { class: 'msg msg-att' }, [el('ul', { style: 'margin:0' }, d.alertes.map(function (m) { return el('li', { text: m }); }))]));
+  }
+
+  function changerType(q, nouveau) {
+    var avant = typeInfo(q.type), apres = typeInfo(nouveau);
+    if (apres.choix && apres.unique) {
+      var bonnes = q.options.filter(function (o) { return o.correct; });
+      if (bonnes.length > 1) {
+        var premiere = true;
+        q.options.forEach(function (o) { if (o.correct) { o.correct = premiere; premiere = false; } });
+        toast(apres.label + ' : une seule bonne réponse possible, seule la première a été conservée.');
+      }
+    }
+    if (avant.choix && !apres.choix && (nouveau === 'REPONSE_COURTE' || nouveau === 'PARAGRAPHE') && !String(q.reponseAttendue || '').trim()) {
+      var b = q.options.filter(function (o) { return o.correct && o.texte.trim(); }).map(function (o) { return o.texte.trim(); });
+      if (b.length) q.reponseAttendue = b.join(' ; ');
+    }
+    if (apres.choix && q.options.length < 2) {
+      while (q.options.length < 2) q.options.push({ texte: '', correct: false });
+    }
+    q.type = nouveau;
+  }
+
+  function basculerBonne(q, k) {
+    var t = typeInfo(q.type);
+    if (t.unique) {
+      var deja = q.options[k].correct;
+      q.options.forEach(function (o) { o.correct = false; });
+      q.options[k].correct = !deja;
+    } else {
+      q.options[k].correct = !q.options[k].correct;
+    }
+  }
+
+  function rendreEditeur() {
+    var z = $('editeur');
+    z.innerHTML = '';
+    var i = etat.courant, q = etat.questions[i], t = typeInfo(q.type);
+    var n = etat.questions.length;
+
+    z.appendChild(el('div', { class: 'q-tete' }, [
+      el('span', { class: 'q-num', text: 'Question ' + (i + 1) + ' sur ' + n }),
+      el('span', { class: 'barre' }, [
+        el('button', { class: 'btn-lien', text: '+ Insérer une question après', onclick: function () {
+          etat.questions.splice(i + 1, 0, {
+            id: 'q' + Date.now().toString(36), num: 0, titre: '', type: etat.defauts.type, points: Number(etat.defauts.points) || 0,
+            obligatoire: !!etat.defauts.obligatoire, options: typeInfo(etat.defauts.type).choix ? [{ texte: '', correct: false }, { texte: '', correct: false }] : [],
+            reponseAttendue: '', echelleMin: 1, echelleMax: 5, echelleLabelMin: '', echelleLabelMax: '', notes: [], vue: true
+          });
+          ouvrir(i + 1);
+        } }),
+        el('button', { class: 'btn-lien btn-danger', text: 'Supprimer', onclick: function () {
+          if (n === 1) { toast('Le formulaire doit contenir au moins une question.'); return; }
+          etat.questions.splice(i, 1);
+          toast('Question ' + (i + 1) + ' supprimée.');
+          ouvrir(Math.min(i, etat.questions.length - 1));
+        } })
+      ])
+    ]));
+
+    var titre = el('textarea', { rows: 2, value: q.titre, 'aria-label': 'Énoncé' });
+    titre.value = q.titre;
+    titre.addEventListener('input', function () { q.titre = titre.value; majEtatQuestion(); });
+    z.appendChild(el('label', { class: 'champ' }, [el('span', { text: 'Énoncé' }), titre]));
+
+    var selType = el('select', null, TYPES.map(function (ty) { return el('option', { value: ty.id, text: ty.label }); }));
+    selType.value = q.type;
+    selType.addEventListener('change', function () { changerType(q, selType.value); sauver(); rendreEtape2(); });
+    var pts = el('input', { type: 'number', min: 0, step: 1, value: q.points });
+    pts.addEventListener('input', function () { q.points = pts.value === '' ? '' : Number(pts.value); majEtatQuestion(); });
+    var oblig = el('input', { type: 'checkbox', checked: q.obligatoire });
+    oblig.addEventListener('change', function () { q.obligatoire = oblig.checked; sauver(); });
+    z.appendChild(el('div', { class: 'reglages' }, [
+      el('label', { class: 'champ' }, [el('span', { text: 'Type de question' }), selType]),
+      el('label', { class: 'champ' }, [el('span', { text: 'Points' }), pts]),
+      el('label', { class: 'case', style: 'padding-bottom:9px' }, [oblig, 'Obligatoire'])
+    ]));
+
+    if (t.choix) {
+      z.appendChild(el('div', null, [
+        el('h3', { text: 'Propositions' }),
+        el('p', { class: 'doux petit', text: t.unique ? 'Cliquez sur le rond de la bonne réponse (une seule).' : 'Cochez toutes les bonnes réponses. Google Forms n\'attribue les points que si la sélection est exacte (pas de points partiels).' })
+      ]));
+      var liste = el('div', { class: 'options' });
+      q.options.forEach(function (o, k) {
+        var marque = el('button', {
+          class: 'marque-bonne ' + (t.unique ? 'rond' : 'carre'), 'aria-pressed': o.correct ? 'true' : 'false',
+          title: o.correct ? 'Bonne réponse' : 'Marquer comme bonne réponse', html: SVG_COCHE,
+          onclick: function () { basculerBonne(q, k); sauver(); rendreEditeur(); rendrePastilles(); }
+        });
+        var champ = el('input', { type: 'text', value: o.texte, 'aria-label': 'Proposition ' + LETTRES[k] });
+        champ.value = o.texte;
+        champ.addEventListener('input', function () { o.texte = champ.value; majEtatQuestion(); });
+        champ.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            if (k === q.options.length - 1) { q.options.push({ texte: '', correct: false }); sauver(); rendreEditeur(); focusOption(k + 1); }
+            else focusOption(k + 1);
+          }
+        });
+        var suppr = el('button', { class: 'suppr', title: 'Supprimer la proposition', text: '×', onclick: function () {
+          q.options.splice(k, 1); sauver(); rendreEditeur(); rendrePastilles();
+        } });
+        liste.appendChild(el('div', { class: 'option' + (o.correct ? ' bonne' : '') }, [marque, el('span', { class: 'lettre', text: (LETTRES[k] || '') }), champ, suppr]));
+      });
+      z.appendChild(liste);
+      z.appendChild(el('div', null, [el('button', { class: 'btn-lien', text: '+ Ajouter une proposition', onclick: function () {
+        q.options.push({ texte: '', correct: false }); sauver(); rendreEditeur(); rendrePastilles(); focusOption(q.options.length - 1);
+      } })]));
+    } else if (q.type === 'REPONSE_COURTE' || q.type === 'PARAGRAPHE') {
+      var att = el(q.type === 'PARAGRAPHE' ? 'textarea' : 'input', q.type === 'PARAGRAPHE' ? { rows: 3 } : { type: 'text' });
+      att.value = q.reponseAttendue || '';
+      att.addEventListener('input', function () { q.reponseAttendue = att.value; majEtatQuestion(); });
+      z.appendChild(el('label', { class: 'champ' }, [
+        el('span', { text: q.type === 'PARAGRAPHE' ? 'Éléments attendus (pour votre correction)' : 'Réponse attendue' }), att
+      ]));
+      z.appendChild(el('div', { class: 'msg msg-info petit', text: q.type === 'PARAGRAPHE'
+        ? 'Google Forms ne corrige pas les paragraphes automatiquement : la note se met à la main dans l\'onglet Réponses. Les éléments saisis ici figurent dans le bilan final.'
+        : 'Google Forms ne permet pas d\'enregistrer par script la réponse attendue d\'une question courte. Elle figurera dans le bilan final pour être ajoutée au corrigé en deux clics.' }));
+    } else if (q.type === 'ECHELLE_LINEAIRE') {
+      var mn = el('select', null, [el('option', { value: '0', text: '0' }), el('option', { value: '1', text: '1' })]);
+      mn.value = String(q.echelleMin);
+      mn.addEventListener('change', function () { q.echelleMin = +mn.value; majEtatQuestion(); });
+      var mx = el('select', null, [3, 4, 5, 6, 7, 8, 9, 10].map(function (v) { return el('option', { value: String(v), text: String(v) }); }));
+      mx.value = String(q.echelleMax);
+      mx.addEventListener('change', function () { q.echelleMax = +mx.value; majEtatQuestion(); });
+      var l1 = el('input', { type: 'text', placeholder: 'Facultatif' }); l1.value = q.echelleLabelMin || '';
+      l1.addEventListener('input', function () { q.echelleLabelMin = l1.value; sauver(); });
+      var l2 = el('input', { type: 'text', placeholder: 'Facultatif' }); l2.value = q.echelleLabelMax || '';
+      l2.addEventListener('input', function () { q.echelleLabelMax = l2.value; sauver(); });
+      z.appendChild(el('div', { class: 'grille-2' }, [
+        el('label', { class: 'champ' }, [el('span', { text: 'De' }), mn]),
+        el('label', { class: 'champ' }, [el('span', { text: 'À' }), mx]),
+        el('label', { class: 'champ' }, [el('span', { text: 'Libellé du début' }), l1]),
+        el('label', { class: 'champ' }, [el('span', { text: 'Libellé de la fin' }), l2])
+      ]));
+      z.appendChild(el('div', { class: 'msg msg-info petit', text: 'Pas de bonne réponse définissable par script pour ce type : il sera noté manuellement si vous lui attribuez des points.' }));
+    } else {
+      z.appendChild(el('div', { class: 'msg msg-info petit', text: 'Question de type ' + t.label + ' : pas de bonne réponse définissable par script ; notation manuelle si vous lui attribuez des points.' }));
+    }
+
+    if (q.notes && q.notes.length) {
+      z.appendChild(el('div', { class: 'notes-q doux' }, [
+        el('b', { text: 'Repéré dans le texte : ' }),
+        el('ul', { style: 'margin:4px 0 0;padding-left:18px' }, q.notes.map(function (m) { return el('li', { text: m }); }))
+      ]));
+    }
+
+    var diag = el('div', { id: 'diag-q', class: 'pile' });
+    remplirDiagnostic(diag, q);
+    z.appendChild(diag);
+
+    var dernier = i === n - 1;
+    z.appendChild(el('div', { class: 'barre', style: 'margin-top:18px' }, [
+      el('button', { class: 'btn', text: '← Précédente', disabled: i === 0, onclick: function () { ouvrir(i - 1); } }),
+      el('span', { class: 'espace' }),
+      el('span', { class: 'raccourcis', html: 'Raccourcis hors saisie : <kbd>A</kbd>...<kbd>H</kbd> bonne réponse, <kbd>←</kbd> <kbd>→</kbd> navigation' }),
+      dernier
+        ? el('button', { class: 'btn btn-primaire', text: 'Récapitulatif →', onclick: function () { allerA(3); } })
+        : el('button', { class: 'btn btn-primaire', text: 'Suivante →', onclick: function () { ouvrir(i + 1); } })
+    ]));
+  }
+
+  function focusOption(k) {
+    var champs = document.querySelectorAll('#editeur .option input');
+    if (champs[k]) champs[k].focus();
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (etat.etape !== 2 || e.ctrlKey || e.metaKey || e.altKey) return;
+    var tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+    var q = etat.questions[etat.courant];
+    if (!q) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); if (etat.courant < etat.questions.length - 1) ouvrir(etat.courant + 1); else allerA(3); return; }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); ouvrir(etat.courant - 1); return; }
+    var k = LETTRES.indexOf(String(e.key).toLowerCase());
+    if (k >= 0 && typeInfo(q.type).choix && k < q.options.length && String(e.key).length === 1) {
+      e.preventDefault();
+      basculerBonne(q, k);
+      sauver();
+      rendreEditeur();
+      rendrePastilles();
+    }
+  });
+
+  /* ---------- étape 3 ---------- */
+  function resumeReponse(q) {
+    var t = typeInfo(q.type);
+    if (t.choix) {
+      var b = [];
+      q.options.forEach(function (o, k) { if (o.correct) b.push(LETTRES[k] + ') ' + o.texte); });
+      return b.length ? b.join(' | ') : '-';
+    }
+    if (q.type === 'REPONSE_COURTE' || q.type === 'PARAGRAPHE') return q.reponseAttendue ? q.reponseAttendue + ' (manuel)' : '-';
+    return 'non corrigé automatiquement';
+  }
+
+  function rendreEtape3() {
+    var r = $('recap');
+    r.innerHTML = '';
+    var total = 0, nbErr = 0, nbAtt = 0, nbNonVues = 0;
+    etat.questions.forEach(function (q) {
+      var d = diagnostic(q);
+      total += Number(q.points) || 0;
+      if (d.niveau === 'erreur') nbErr++;
+      if (d.niveau === 'attention') nbAtt++;
+      if (!q.vue) nbNonVues++;
+    });
+    r.appendChild(el('div', { class: 'q-tete' }, [
+      el('h2', { text: 'Récapitulatif' }),
+      el('span', { class: 'doux petit', text: 'Cliquez sur une ligne pour modifier la question.' })
+    ]));
+    r.appendChild(el('div', { class: 'total' }, [
+      el('div', null, [el('b', { text: String(etat.questions.length) }), el('span', { class: 'doux petit', text: 'questions' })]),
+      el('div', null, [el('b', { text: String(total) }), el('span', { class: 'doux petit', text: 'points au total' })]),
+      el('div', null, [el('b', { text: String(nbAtt), style: nbAtt ? 'color:var(--att)' : '' }), el('span', { class: 'doux petit', text: 'à vérifier' })]),
+      el('div', null, [el('b', { text: String(nbErr), style: nbErr ? 'color:var(--err)' : '' }), el('span', { class: 'doux petit', text: 'bloquantes' })])
+    ]));
+
+    var ptsTous = el('input', { type: 'number', min: 0, step: 1, value: etat.defauts.points, style: 'width:90px' });
+    r.appendChild(el('div', { class: 'barre petit' }, [
+      el('span', { text: 'Attribuer' }), ptsTous,
+      el('span', { text: 'point(s) à toutes les questions' }),
+      el('button', { class: 'btn', text: 'Appliquer', onclick: function () {
+        var v = Number(ptsTous.value);
+        if (ptsTous.value === '' || !(v >= 0) || Math.floor(v) !== v) { toast('Nombre entier positif ou nul attendu.'); return; }
+        etat.questions.forEach(function (q) { q.points = v; });
+        sauver(); rendreEtape3(); toast('Barème appliqué : ' + pluriel(v, 'point') + ' par question.');
+      } })
+    ]));
+
+    var corps = el('tbody');
+    etat.questions.forEach(function (q, i) {
+      var d = diagnostic(q);
+      var lib = { ok: 'Prête', attention: 'À vérifier', erreur: 'Bloquante' }[d.niveau];
+      corps.appendChild(el('tr', { class: 'cliquable', title: d.erreurs.concat(d.alertes).join(' '), onclick: function () { etat.etape = 2; ouvrir(i); rendreEtapes(); window.scrollTo(0, 0); } }, [
+        el('td', { text: String(i + 1) }),
+        el('td', { text: q.titre.length > 110 ? q.titre.slice(0, 107) + '...' : (q.titre || '(énoncé vide)') }),
+        el('td', { text: typeInfo(q.type).label }),
+        el('td', { text: String(q.points) }),
+        el('td', { text: resumeReponse(q) }),
+        el('td', null, [el('span', { class: 'etiquette ' + d.niveau, text: lib }), q.vue ? null : el('div', { class: 'doux petit', text: 'non ouverte' })])
+      ]));
+    });
+    r.appendChild(el('div', { class: 'tableau' }, [el('table', { class: 'recap' }, [
+      el('thead', null, [el('tr', null, ['N°', 'Énoncé', 'Type', 'Pts', 'Bonne(s) réponse(s)', 'État'].map(function (h) { return el('th', { text: h }); }))]),
+      corps
+    ])]));
+
+    rendreEnvoi(nbErr, nbAtt, nbNonVues);
+    rendreResultat();
+  }
+
+  function rendreEnvoi(nbErr, nbAtt, nbNonVues) {
+    var z = $('envoi');
+    z.innerHTML = '';
+    z.appendChild(el('h2', { text: 'Création du Google Form' }));
+
+    var titre = el('input', { type: 'text', value: etat.titre });
+    titre.value = etat.titre;
+    titre.addEventListener('input', function () { etat.titre = titre.value; $('titre').value = etat.titre; sauver(); });
+    z.appendChild(el('label', { class: 'champ' }, [el('span', { text: 'Titre du formulaire' }), titre]));
+
+    var mel = el('input', { type: 'checkbox', checked: etat.melanger });
+    mel.addEventListener('change', function () { etat.melanger = mel.checked; sauver(); });
+    var pub = el('input', { type: 'checkbox', checked: etat.publier });
+    pub.addEventListener('change', function () { etat.publier = pub.checked; sauver(); });
+    z.appendChild(el('div', { class: 'pile' }, [
+      el('label', { class: 'case' }, [mel, 'Mélanger l\'ordre des questions pour chaque élève']),
+      el('label', { class: 'case' }, [pub, 'Publier immédiatement (sinon : vous vérifiez le formulaire puis cliquez sur « Publier » dans Google Forms)'])
+    ]));
+
+    if (nbErr) {
+      z.appendChild(el('div', { class: 'msg msg-err', text: pluriel(nbErr, 'question') + ' bloquante' + (nbErr > 1 ? 's' : '') + ' à corriger avant la création (pastilles rouges).' }));
+    } else if (nbAtt || nbNonVues) {
+      var lignes = [];
+      if (nbAtt) lignes.push(pluriel(nbAtt, 'question') + ' à vérifier (bonne réponse ou réponse attendue manquante).');
+      if (nbNonVues) lignes.push(pluriel(nbNonVues, 'question') + ' pas encore ouverte' + (nbNonVues > 1 ? 's' : '') + '.');
+      var conf = el('input', { type: 'checkbox', checked: etat.confirmeAlertes });
+      conf.addEventListener('change', function () { etat.confirmeAlertes = conf.checked; rendreEtape3(); });
+      z.appendChild(el('div', { class: 'msg msg-att' }, [
+        el('div', { text: lignes.join(' ') }),
+        el('label', { class: 'case', style: 'margin-top:8px;color:var(--encre)' }, [conf, 'J\'ai vérifié, créer le formulaire en l\'état'])
+      ]));
+    }
+
+    var bloque = !!nbErr || ((nbAtt || nbNonVues) && !etat.confirmeAlertes) || !etat.titre.trim() || etat.envoiEnCours;
+    var btn = el('button', { class: 'btn btn-primaire', disabled: bloque, onclick: envoyer }, etat.envoiEnCours
+      ? [el('span', { class: 'tournant' }), 'Création en cours...']
+      : ['Créer le Google Form']);
+    z.appendChild(el('div', { class: 'barre' }, [
+      el('button', { class: 'btn', text: '← Revenir aux questions', onclick: function () { allerA(2); } }),
+      el('span', { class: 'espace' }),
+      !etat.titre.trim() ? el('span', { class: 'petit', style: 'color:var(--err)', text: 'Titre obligatoire' }) : null,
+      btn
+    ]));
+  }
+
+  function construireDonnees() {
+    return {
+      titre: etat.titre.trim(),
+      description: etat.description.trim(),
+      melanger: !!etat.melanger,
+      publier: !!etat.publier,
+      questions: etat.questions.map(function (q) {
+        var t = typeInfo(q.type);
+        return {
+          titre: String(q.titre).trim(),
+          type: q.type,
+          points: Number(q.points) || 0,
+          obligatoire: !!q.obligatoire,
+          options: t.choix ? q.options.map(function (o) { return { texte: String(o.texte).trim(), correct: !!o.correct }; }) : [],
+          reponseAttendue: String(q.reponseAttendue || '').trim(),
+          echelleMin: q.echelleMin, echelleMax: q.echelleMax,
+          echelleLabelMin: q.echelleLabelMin || '', echelleLabelMax: q.echelleLabelMax || ''
+        };
+      })
+    };
+  }
+
+  function envoyer() {
+    var donnees = construireDonnees();
+    if (!APPS_SCRIPT) {
+      etat.resultat = { apercu: true, donnees: donnees };
+      rendreEtape3();
+      return;
+    }
+    etat.envoiEnCours = true;
+    etat.resultat = null;
+    rendreEtape3();
+    google.script.run
+      .withSuccessHandler(function (res) {
+        etat.envoiEnCours = false;
+        etat.resultat = res;
+        rendreEtape3();
+        var z = $('resultat'); if (z) z.scrollIntoView({ behavior: 'smooth' });
+      })
+      .withFailureHandler(function (err) {
+        etat.envoiEnCours = false;
+        etat.resultat = { erreur: (err && err.message) || String(err) };
+        rendreEtape3();
+      })
+      .creerQuestionnaire(donnees);
+  }
+
+  function rendreResultat() {
+    var z = $('resultat');
+    z.innerHTML = '';
+    var r = etat.resultat;
+    if (!r) return;
+    if (r.erreur) {
+      z.appendChild(el('div', { class: 'msg msg-err' }, [el('b', { text: 'La création a échoué. ' }), el('span', { text: r.erreur })]));
+      return;
+    }
+    if (r.apercu) {
+      z.appendChild(el('div', { class: 'carte pile' }, [
+        el('h2', { text: 'Aperçu des données qui seraient envoyées' }),
+        el('p', { class: 'doux petit', text: 'Mode local : aucun formulaire n\'est créé. Déployez le script dans Google Apps Script pour la création réelle.' }),
+        el('pre', { style: 'max-height:320px;overflow:auto;background:var(--fond);border:1px solid var(--trait);border-radius:8px;padding:12px;font-size:12px', text: JSON.stringify(r.donnees, null, 2) })
+      ]));
+      return;
+    }
+    var carte = el('div', { class: 'carte pile' });
+    carte.appendChild(el('div', { class: 'msg msg-ok' }, [el('b', { text: 'Formulaire créé : ' }), el('span', { text: '« ' + r.titre + ' », ' + pluriel(r.nbQuestions, 'question') + ', ' + pluriel(r.totalPoints, 'point') + ' au total.' })]));
+    var liens = el('div', { class: 'liens-resultat' }, [
+      el('a', { class: 'btn btn-primaire', href: r.urlEdition, target: '_blank', rel: 'noopener', text: 'Ouvrir dans Google Forms' }),
+      r.urlReponse ? el('a', { class: 'btn', href: r.urlReponse, target: '_blank', rel: 'noopener', text: 'Lien à transmettre aux élèves' }) : null
+    ]);
+    carte.appendChild(liens);
+    if (!r.publie) carte.appendChild(el('div', { class: 'msg msg-info', text: 'Le formulaire n\'est pas encore publié : vérifiez-le, puis cliquez sur « Publier » dans Google Forms pour obtenir le lien élèves.' }));
+    var aFaire = [];
+    r.actionsManuelles.forEach(function (a) { aFaire.push('Question ' + a.num + ' (' + a.titre.slice(0, 60) + (a.titre.length > 60 ? '...' : '') + ') : ' + a.action); });
+    r.avertissements.forEach(function (a) { aFaire.push(a); });
+    if (aFaire.length) {
+      carte.appendChild(el('div', { class: 'msg msg-att' }, [
+        el('b', { text: 'À compléter dans Google Forms' }),
+        el('ul', null, aFaire.map(function (m) { return el('li', { text: m }); }))
+      ]));
+    }
+    carte.appendChild(el('p', { class: 'doux petit', text: 'Dans Paramètres > Questionnaire, choisissez quand les élèves voient leur note et les bonnes réponses.' }));
+    carte.appendChild(el('div', { class: 'barre' }, [
+      el('span', { class: 'espace' }),
+      el('button', { class: 'btn', text: 'Préparer un autre QCM', onclick: function () {
+        etat.questions = []; etat.analyse = null; etat.resultat = null; etat.texte = ''; etat.titre = ''; etat.description = '';
+        etat.confirmeAlertes = false;
+        $('texte').value = ''; $('titre').value = ''; $('description').value = ''; $('etat-import').innerHTML = ''; $('msg-analyse').innerHTML = '';
+        effacerSauvegarde();
+        allerA(1);
+      } })
+    ]));
+    z.appendChild(carte);
+  }
+
+  /* ---------- démarrage ---------- */
+  function proposerReprise() {
+    var s = lireSauvegarde();
+    if (!s || !s.questions || !s.questions.length) return;
+    var z = $('reprise');
+    z.innerHTML = '';
+    z.classList.remove('cache');
+    var date = new Date(s.date || Date.now());
+    z.appendChild(el('div', { class: 'barre' }, [
+      el('span', { text: 'Travail en cours retrouvé : « ' + (s.titre || 'sans titre') + ' », ' + pluriel(s.questions.length, 'question') +
+        ' (' + date.toLocaleDateString('fr-FR') + ' ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + ').' }),
+      el('span', { class: 'espace' }),
+      el('button', { class: 'btn', text: 'Ignorer', onclick: function () { effacerSauvegarde(); z.classList.add('cache'); } }),
+      el('button', { class: 'btn btn-primaire', text: 'Reprendre', onclick: function () {
+        etat.titre = s.titre || ''; etat.description = s.description || ''; etat.texte = s.texte || '';
+        etat.defauts = s.defauts || etat.defauts; etat.questions = s.questions; etat.courant = s.courant || 0;
+        etat.melanger = !!s.melanger; etat.publier = !!s.publier;
+        etat.analyse = { preambule: [], ignorees: [], notes: [], mode: 'numerote' };
+        $('titre').value = etat.titre; $('description').value = etat.description; $('texte').value = etat.texte;
+        $('def-type').value = etat.defauts.type; $('def-points').value = etat.defauts.points; $('def-oblig').checked = !!etat.defauts.obligatoire;
+        z.classList.add('cache');
+        allerA(2);
+      } })
+    ]));
+  }
+
+  function demarrer() {
+    initEtape1();
+    Array.prototype.forEach.call(document.querySelectorAll('.etape-btn'), function (b) {
+      b.addEventListener('click', function () { allerA(+b.getAttribute('data-etape')); });
+    });
+    $('vers-recap').addEventListener('click', function () { allerA(3); });
+    if (APPS_SCRIPT) {
+      google.script.run.withSuccessHandler(function (mail) {
+        if (mail) $('compte').textContent = 'Formulaires créés dans : ' + mail;
+      }).getCompteActif();
+    } else {
+      $('bandeau-local').classList.remove('cache');
+    }
+    proposerReprise();
+    rendre();
+  }
+
+  demarrer();
+})();
+</script>
+</body>
+</html>
