@@ -280,6 +280,14 @@
     .ilot .seats[data-forme="1"] > *{grid-row:auto !important; grid-column:auto !important;}
     .ilot .seats[data-forme="1"] > .slot{min-height:44px;}
   }
+  /* Rangée du fond sur grand écran : elle occupe toute la largeur et peut compter beaucoup de
+     places dans une grande classe. Une place n'y descend jamais sous 156 px (+ le gap) : au-delà,
+     c'est la CARTE DU FOND qui défile sur le côté, et non les noms qui s'écrasent. Le défilement
+     reste enfermé dans l'îlot, donc la réduction automatique du plan n'en est pas affectée. */
+  @media(min-width:900px){
+    .ilot.fond{overflow-x:auto;}
+    .ilot.fond .seats[data-large="1"]{min-width:calc(var(--ncol, 7) * 165px);}
+  }
   .ilot{background:var(--card); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow); overflow:hidden; min-width:0;}
   .ilot.fond{border-color:var(--blue);}
   .ilot h2{margin:0; font-size:.76rem; letter-spacing:.1em; text-transform:uppercase; color:#fff; background:var(--blue); padding:9px 12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
@@ -295,6 +303,13 @@
   .seats{display:grid; min-width:0; grid-template-columns:repeat(4, 1fr);
     gap:calc(9px * var(--zoom,1)); padding:12px; grid-auto-rows:minmax(calc(96px * var(--zoom,1)),auto);}
   .frontcap{grid-column:1/-1; font-size:.62rem; letter-spacing:.12em; color:var(--muted); text-transform:uppercase; margin:-2px 0; text-align:center;}
+  /* Élève présent dans la classe mais sans place enregistrée (ajouté après la constitution du
+     plan) : il est MONTRÉ, à part et en pointillé, jamais escamoté. Le compte affiché en tête
+     d'îlot doit toujours correspondre à ce que l'on voit. */
+  .ilot .sansplace{grid-column:1/-1; font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; font-weight:700;
+    color:#8a6d1a; background:var(--amber-bg); border:1px dashed var(--amber); border-radius:8px; padding:3px 8px; text-align:center;}
+  .seat.hors-place{border-style:dashed; border-color:var(--amber);}
+  .ilot .sansplace-b{background:#8a6d1a; color:#fff; border-radius:7px; padding:3px 9px; font-weight:800; font-size:.66rem; letter-spacing:0; text-transform:none; margin-left:6px;}
 
   .seat{position:relative; text-align:left; background:#fff; border:1.5px solid var(--line); border-radius:11px;
     padding:calc(28px * var(--zoom,1)) 10px calc(22px * var(--zoom,1)); min-height:calc(96px * var(--zoom,1) + var(--etire, 0px)); display:flex; flex-direction:column; gap:3px; touch-action:manipulation; overflow:hidden;
@@ -3860,7 +3875,7 @@
   var KEY_DERNIERENVOI = "pdc_dernierenvoi";
   /* Repère de version : permet de vérifier d'un coup d'œil que deux postes font tourner
      le même programme (⚙︎ Classe, en bas du bloc Drive). */
-  var APP_VERSION = "2026-10-23-b";
+  var APP_VERSION = "2026-11-08";
   var saveTimer = null, dirty = false;
   function marquerNonEnvoye(v) { dirty = !!v; LS.setRaw(KEY_NONENVOYE, v ? "1" : ""); }
   function relireNonEnvoye() { dirty = (LS.raw(KEY_NONENVOYE) === "1"); }
@@ -7118,6 +7133,7 @@
     var room = $("room"); room.innerHTML = "";
     if (salleDe(cid) && (customOn(cid) || roomEdit)) { renderCustomRoom(cid); requestAnimationFrame(function(){ ajusterColonnes(); fitNames(); fitRoom(); }); return; }
     var photo = (n === 5), caps = D.capsFor(n, eleves.length);
+    var posEnr = plan(cid).pos || {};   // places RÉELLEMENT enregistrées (posOf, lui, invente un défaut)
     // analyse par groupe (climat + profils) - lecture seule, pour le résumé sur le plan
     var groupsForAnalysis = [];
     for (var ga = 0; ga < n; ga++) groupsForAnalysis[ga] = eleves.filter(function (s) { return posOf(cid, s.id).group === ga; });
@@ -7147,14 +7163,45 @@
         '<span class="ilot-eff">' + list.length + " él. · " + f + "F/" + g2 + "G</span></h2>";
       var seats = document.createElement("div"); seats.className = "seats";
       if (photo) {
-        var shape = clusterShape(gi, caps[4]), byOrder = {}; list.forEach(function (s) { byOrder[posOf(cid, s.id).order] = s; });
+        var shape = clusterShape(gi, gi === 4 ? capFondAffichee(list, posEnr, caps[4]) : caps[4]);
+        /* Une place n'est prise que par l'élève qui l'a RÉELLEMENT enregistrée : sans cette
+           condition, les élèves sans place (défaut groupe 0, ordre 0) se recouvraient tous sur
+           la première place et un seul d'entre eux apparaissait. */
+        var byOrder = {}, dessines = {};
+        list.forEach(function (s) { var pr = posEnr[s.id]; if (pr && byOrder[pr.order] === undefined) byOrder[pr.order] = s; });
         seats.dataset.forme = "1";                 // colonnes imposées par la forme de l'îlot
+        /* Au-delà de 9 colonnes (grande classe au fond), la rangée ne tient plus en largeur
+           sans écraser les noms : elle passe en défilement latéral dans sa propre carte. */
+        if (shape.cols > 9) seats.dataset.large = "1";
         seats.style.gridTemplateColumns = "repeat(" + shape.cols + ",1fr)";
         seats.style.setProperty("--ncol", shape.cols);
+        var derniereRangee = 1;
         shape.cells.forEach(function (cell) {
           var s = byOrder[cell.o], el = s ? seatEl(s) : emptySlot(gi, cell.o);
+          if (s) dessines[s.id] = 1;
+          if (cell.r > derniereRangee) derniereRangee = cell.r;
           el.style.gridRow = cell.r; el.style.gridColumn = cell.c; seats.appendChild(el);
         });
+        /* Aucun élève ne disparaît du plan : ceux qui n'ont pas de place (ajoutés après coup,
+           ou deux élèves sur la même place après une fusion) sont affichés sous l'îlot, en
+           pointillé, et peuvent être glissés sur une place libre. */
+        var restes = list.filter(function (s) { return !dessines[s.id]; });
+        if (restes.length) {
+          var titre = document.createElement("div");
+          titre.className = "sansplace";
+          titre.innerHTML = "▾ " + restes.length + " élève" + (restes.length > 1 ? "s" : "") + " sans place "
+            + '<button type="button" class="sansplace-b">Les asseoir sur les places libres</button>';
+          titre.querySelector("button").addEventListener("click", function (ev) {
+            ev.stopPropagation(); asseoirSansPlace(cid);
+          });
+          titre.style.gridRow = derniereRangee + 1; seats.appendChild(titre);
+          restes.forEach(function (s, i) {
+            var el = seatEl(s); el.classList.add("hors-place");
+            el.style.gridRow = derniereRangee + 2 + Math.floor(i / shape.cols);
+            el.style.gridColumn = (i % shape.cols) + 1;
+            seats.appendChild(el);
+          });
+        }
       } else {
         if (list.length) { var capn = document.createElement("div"); capn.className = "frontcap"; capn.textContent = "▾ rang avant (côté bureau)"; seats.appendChild(capn); }
         list.forEach(function (s) { seats.appendChild(seatEl(s)); });
@@ -7163,6 +7210,48 @@
       il.appendChild(seats); room.appendChild(il);
     });
     requestAnimationFrame(function(){ ajusterColonnes(); fitNames(); fitRoom(); });
+  }
+  /* Asseoir les élèves qui n'ont aucune place enregistrée - typiquement ceux inscrits après
+     la constitution du plan. Règle de la maison : on ne déplace JAMAIS un élève déjà placé.
+     On ne fait donc que remplir les places libres, dans l'ordre, sans toucher au reste ;
+     Ctrl+Z annule l'opération comme n'importe quel déplacement. */
+  function asseoirSansPlace(cid) {
+    var p = plan(cid), eleves = classEleves(cid), n = p.groups;
+    var caps = D.capsFor(n, eleves.length), occupe = {};
+    eleves.forEach(function (s) { var pr = p.pos[s.id]; if (pr) occupe[pr.group + "#" + pr.order] = 1; });
+    var restes = eleves.filter(function (s) { return !p.pos[s.id]; });
+    if (!restes.length) { flash("Tous les élèves ont déjà une place"); return 0; }
+    act("Asseoir les élèves sans place");
+    var pose = 0;
+    restes.forEach(function (s) {
+      for (var g = 0; g < n; g++) {
+        for (var o = 0; o < caps[g]; o++) {
+          if (occupe[g + "#" + o]) continue;
+          p.pos[s.id] = { group: g, order: o }; s.group = g; s.order = o;
+          occupe[g + "#" + o] = 1; pose++; return;
+        }
+      }
+    });
+    save(); renderRoom(); hideUndo();
+    flash(pose === restes.length
+      ? (pose + " élève" + (pose > 1 ? "s" : "") + " assis" + (pose > 1 ? "" : "") + " sur les places libres")
+      : (pose + " élève(s) assis, " + (restes.length - pose) + " sans place : la salle est trop petite"), 4000);
+    return pose;
+  }
+  /* Combien de places DESSINER sur la rangée du fond.
+     La capacité théorique du fond (capsFor) absorbe tout le débordement d'une grande classe :
+     20 places pour une classe de 44. Dessinées telles quelles sur une seule rangée large de
+     tout l'écran, les places tombaient à 60 px et les noms s'écrivaient lettre par lettre.
+     On ne dessine donc que ce qui sert : les places occupées (6 au minimum, pour que la rangée
+     garde sa forme de deux tables), plus deux places libres pour pouvoir y glisser un élève
+     tant que la rangée reste courte, et jamais plus que la capacité réelle du fond. */
+  function capFondAffichee(list, posEnr, capFond) {
+    var maxOrdre = -1;
+    list.forEach(function (s) { var pr = posEnr[s.id]; if (pr && pr.order > maxOrdre) maxOrdre = pr.order; });
+    var occupe = Math.max(list.length, maxOrdre + 1);
+    var cap = Math.max(6, occupe);
+    if (cap <= 6) cap = 8;                                  // deux places libres : 9 colonnes, encore lisibles
+    return Math.min(cap, Math.max(capFond || 6, 6));
   }
   function clusterShape(gi, backCap) {
     var Lr = { type: "L", cols: 4, cells: [{ o: 0, r: 3, c: 1 }, { o: 1, r: 3, c: 2 }, { o: 2, r: 3, c: 3 }, { o: 3, r: 3, c: 4 }, { o: 4, r: 2, c: 4 }, { o: 5, r: 1, c: 4 }] };
@@ -10064,6 +10153,15 @@
       return;
     }
     var s = state.eleves[id], ps = p.pos[id];
+    /* Élève sans place enregistrée : il n'a rien à échanger. On l'installe sur une place
+       libre, et on refuse l'échange plutôt que de renvoyer son voisin dans le vide. */
+    if (!ps) {
+      if (t.classList.contains("seat")) { flash("Cet élève n'a pas encore de place : déposez-le sur une place libre ＋", 4000); return; }
+      p.pos[id] = { group: +t.dataset.group, order: (t.dataset.order !== undefined ? +t.dataset.order : 999) };
+      if (s) { s.group = p.pos[id].group; s.order = p.pos[id].order; }
+      act("Placer un élève sans place"); save(); renderRoom(); hideUndo(); flash("Élève placé");
+      return;
+    }
     if (t.classList.contains("seat")) {
       var oid = t.dataset.id, po = p.pos[oid]; if (!po) return;
       var tg = ps.group, to = ps.order; ps.group = po.group; ps.order = po.order; po.group = tg; po.order = to;
@@ -10341,13 +10439,24 @@
       var list = eleves.filter(function (s) { return posOf(cid, s.id).group === gi; }).sort(function (a, b) { return posOf(cid, a.id).order - posOf(cid, b.id).order; });
       var inner;
       if (photo) {
-        var shape = clusterShape(gi, caps[4]); var byOrder = {}; list.forEach(function (s) { byOrder[posOf(cid, s.id).order] = s; });
+        /* Même règle qu'à l'écran : la rangée du fond n'est dessinée qu'à la taille utile, et
+           aucun élève sans place n'est escamoté du plan imprimé. */
+        var posEnr = p.pos || {};
+        var shape = clusterShape(gi, gi === 4 ? capFondAffichee(list, posEnr, caps[4]) : caps[4]);
+        var byOrder = {}, dessines = {};
+        list.forEach(function (s) { var pr = posEnr[s.id]; if (pr && byOrder[pr.order] === undefined) byOrder[pr.order] = s; });
         inner = '<div class="pp-seats" style="grid-template-columns:repeat(' + shape.cols + ',1fr)">' +
           shape.cells.map(function (cell) {
             var s = byOrder[cell.o];
+            if (s) dessines[s.id] = 1;
             var g = "grid-row:" + cell.r + ";grid-column:" + cell.c;
             return s ? seatHtml(s, g) : '<div class="pp-empty" style="' + g + '"></div>';
           }).join("") + "</div>";
+        var restes = list.filter(function (s) { return !dessines[s.id]; });
+        if (restes.length) {
+          inner += '<div class="pp-sansplace">' + restes.length + " élève" + (restes.length > 1 ? "s" : "") + " sans place attribuée</div>"
+            + '<div class="pp-seats pp-flow">' + restes.map(function (s) { return seatHtml(s); }).join("") + "</div>";
+        }
       } else {
         inner = '<div class="pp-seats pp-flow">' + list.map(seatHtml).join("") + "</div>";
       }
@@ -10417,6 +10526,7 @@
       '.pp-flow .pp-seat{flex:1 1 110px;max-width:160px}' +
       '.pp-seat b{font-size:.74rem;display:block;word-break:break-word}.pp-seat>span{font-size:.68rem;color:#333}' +
       '.pp-empty{border:1.4px dashed #ddd;border-radius:7px}' +
+      '.pp-sansplace{margin:6px 8px 0;font-size:8.5pt;font-weight:700;color:#8a6d1a;border:1px dashed #d9a62a;border-radius:6px;padding:2px 6px;text-align:center}' +
       '.pp-up{border-color:#2f9e6f;background:#eef8f2}.pp-down{border-color:#d64545;background:#fdf0f0}' +
       '.pp-meta{display:flex;align-items:center;gap:4px;margin-top:2px;flex-wrap:wrap}' +
       '.pp-meta em{font-style:normal;font-size:.6rem;font-weight:800;background:#2f6fb0;color:#fff;border-radius:4px;padding:1px 4px}' +
