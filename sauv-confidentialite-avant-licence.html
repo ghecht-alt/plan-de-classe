@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plan de classe — Règles de confidentialité</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin:0; background:#f6f7f9; color:#1c1f24;
+         font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  main { max-width:44rem; margin:0 auto; padding:3rem 1.5rem 5rem; background:#fff; min-height:100vh;
+         box-shadow:0 0 40px rgba(0,0,0,.05); }
+  h1 { font-size:1.7rem; line-height:1.25; margin:0 0 .4rem; letter-spacing:-.01em; }
+  .maj { color:#6b7280; font-size:.9rem; margin:0 0 2.2rem; }
+  h2 { font-size:1.08rem; margin:2.2rem 0 .6rem; letter-spacing:-.005em; }
+  p, li { margin:.5rem 0; }
+  ul { padding-left:1.2rem; }
+  a { color:#1a56c4; }
+  .encadre { background:#f0f4fa; border-left:3px solid #1a56c4; padding:.9rem 1.1rem; margin:1.4rem 0; border-radius:0 6px 6px 0; }
+  footer { margin-top:3rem; padding-top:1.2rem; border-top:1px solid #e5e7eb; color:#6b7280; font-size:.88rem; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Règles de confidentialité</h1>
+<p class="maj">Application « Plan de classe » — dernière mise à jour : 3 septembre 2026</p>
+
+<p>« Plan de classe » est un outil personnel d'aide à la gestion de classe, développé et utilisé
+par un enseignant pour son propre usage professionnel. La présente page décrit les données
+traitées par l'application et la manière dont elles sont conservées.</p>
+
+<h2>1. Responsable du traitement</h2>
+<p>L'utilisateur de l'application, enseignant, est seul responsable des données qu'il y saisit.
+Contact : <a href="mailto:gg.hecht@gmail.com">gg.hecht@gmail.com</a></p>
+
+<h2>2. Données traitées</h2>
+<p>L'application permet de saisir et de conserver, pour la seule finalité de l'organisation
+pédagogique de la classe :</p>
+<ul>
+  <li>les nom et prénom des élèves d'une classe ;</li>
+  <li>des informations d'organisation : place attribuée, groupe, emploi du temps ;</li>
+  <li>des éléments de suivi pédagogique saisis par l'enseignant (participation orale,
+      travail, observations de comportement) ;</li>
+  <li>l'existence d'aménagements de scolarité, utilisée uniquement pour proposer un
+      placement adapté dans la salle.</li>
+</ul>
+
+<h2>3. Où sont stockées les données</h2>
+<p>L'application est une page web autonome qui s'exécute entièrement dans le navigateur de
+l'utilisateur. Elle ne comporte aucun serveur, aucune base de données distante et aucun
+service d'analyse ou de publicité.</p>
+<ul>
+  <li><strong>Sur l'appareil</strong> : les données sont enregistrées dans le stockage local
+      du navigateur (<em>localStorage</em>) et ne quittent pas l'appareil.</li>
+  <li><strong>Sur Google&nbsp;Drive</strong>, si et seulement si l'utilisateur active la
+      sauvegarde : un fichier de sauvegarde est déposé dans le Google&nbsp;Drive
+      <em>de l'utilisateur lui-même</em>, sur son propre compte.</li>
+</ul>
+
+<div class="encadre">
+  <p style="margin:0"><strong>Aucune donnée n'est transmise au développeur ni à un tiers.</strong>
+  Il n'existe aucun serveur intermédiaire : les données circulent uniquement entre le navigateur
+  de l'utilisateur et son propre espace Google&nbsp;Drive.</p>
+</div>
+
+<h2>4. Accès à Google Drive</h2>
+<p>L'application demande l'autorisation Google
+<code>https://www.googleapis.com/auth/drive.file</code>. Cette autorisation est volontairement
+la plus restreinte possible : elle donne accès <strong>exclusivement aux fichiers créés par
+l'application elle-même</strong>. L'application ne peut ni lire, ni lister, ni modifier, ni
+supprimer les autres fichiers du Drive de l'utilisateur.</p>
+<p>Le jeton d'accès délivré par Google reste en mémoire dans le navigateur pendant la session
+et n'est jamais enregistré ailleurs.</p>
+
+<h2>5. Chiffrement des sauvegardes</h2>
+<p>Les fichiers de sauvegarde exportés sont chiffrés côté navigateur (AES-GCM) au moyen d'une
+clé propre à l'utilisateur. Un fichier de sauvegarde récupéré isolément ne peut pas être lu
+sans cette clé ou sa phrase de récupération.</p>
+
+<h2>6. Durée de conservation</h2>
+<p>Les données sont conservées le temps de l'année scolaire concernée. L'utilisateur peut à
+tout moment supprimer une classe, un élève ou l'intégralité des données depuis l'application,
+et supprimer les fichiers de sauvegarde depuis son Google&nbsp;Drive.</p>
+
+<h2>7. Droits des personnes</h2>
+<p>Les élèves et leurs représentants légaux disposent des droits d'accès, de rectification,
+d'effacement, de limitation et d'opposition prévus par le RGPD. Ces demandes s'exercent
+auprès de l'établissement scolaire, et auprès de l'utilisateur de l'application à l'adresse
+indiquée au point&nbsp;1.</p>
+
+<h2>8. Sécurité</h2>
+<p>L'application est distribuée en HTTPS. L'utilisateur est invité à protéger l'accès à sa
+session de navigateur et à son compte Google, qui constituent la première barrière de
+protection des données.</p>
+
+<h2>9. Modifications</h2>
+<p>Toute modification de ces règles sera publiée sur cette page, avec mise à jour de la date
+indiquée en tête.</p>
+
+<footer>
+  <a href="./">← Retour à l'application</a> ·
+  <a href="./conditions.html">Conditions d'utilisation</a>
+</footer>
+
+</main>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Plan de classe — Règles de confidentialité</title>
+<title>Plan de classe - Règles de confidentialité</title>
 <style>
   :root { color-scheme: light; }
   body { margin:0; background:#f6f7f9; color:#1c1f24;
@@ -24,15 +24,16 @@
 <main>
 
 <h1>Règles de confidentialité</h1>
-<p class="maj">Application « Plan de classe » — dernière mise à jour : 3 septembre 2026</p>
+<p class="maj">Application « Plan de classe » - dernière mise à jour : 13 novembre 2026</p>
 
-<p>« Plan de classe » est un outil personnel d'aide à la gestion de classe, développé et utilisé
-par un enseignant pour son propre usage professionnel. La présente page décrit les données
-traitées par l'application et la manière dont elles sont conservées.</p>
+<p>« Plan de classe » est un outil d'aide à la gestion de classe, développé par un enseignant pour
+son usage professionnel et mis à la disposition de ses collègues. Chaque enseignant l'utilise avec
+son propre compte Google. La présente page décrit les données traitées par l'application et la
+manière dont elles sont conservées.</p>
 
 <h2>1. Responsable du traitement</h2>
-<p>L'utilisateur de l'application, enseignant, est seul responsable des données qu'il y saisit.
-Contact : <a href="mailto:gg.hecht@gmail.com">gg.hecht@gmail.com</a></p>
+<p>Chaque enseignant utilisateur de l'application est seul responsable des données qu'il y saisit.
+Contact concernant l'application : <a href="mailto:gg.hecht@gmail.com">gg.hecht@gmail.com</a></p>
 
 <h2>2. Données traitées</h2>
 <p>L'application permet de saisir et de conserver, pour la seule finalité de l'organisation
@@ -56,6 +57,10 @@ service d'analyse ou de publicité.</p>
   <li><strong>Sur Google&nbsp;Drive</strong>, si et seulement si l'utilisateur active la
       sauvegarde : un fichier de sauvegarde est déposé dans le Google&nbsp;Drive
       <em>de l'utilisateur lui-même</em>, sur son propre compte.</li>
+  <li><strong>Plusieurs enseignants sur un même appareil</strong> : les données de chaque compte
+      Google sont enregistrées à part sur l'appareil, chiffrées avec la clé propre à ce compte, et
+      sauvegardées uniquement dans le Google&nbsp;Drive de ce compte. Aucune donnée n'est partagée
+      d'un compte à l'autre.</li>
 </ul>
 
 <div class="encadre">
@@ -70,12 +75,14 @@ service d'analyse ou de publicité.</p>
 la plus restreinte possible : elle donne accès <strong>exclusivement aux fichiers créés par
 l'application elle-même</strong>. L'application ne peut ni lire, ni lister, ni modifier, ni
 supprimer les autres fichiers du Drive de l'utilisateur.</p>
-<p>Le jeton d'accès délivré par Google reste en mémoire dans le navigateur pendant la session
-et n'est jamais enregistré ailleurs.</p>
+<p>Le jeton d'accès délivré par Google reste dans la mémoire de session de l'onglet du navigateur,
+effacée à sa fermeture, et n'est jamais enregistré ailleurs. Pour rétablir l'accès à l'ouverture
+sans nouvelle saisie, l'application conserve sur l'appareil l'adresse du compte Google utilisé
+(jamais de mot de passe) et la transmet à Google comme indication du compte à reconnaître.</p>
 
 <h2>5. Chiffrement des sauvegardes</h2>
-<p>Les fichiers de sauvegarde exportés sont chiffrés côté navigateur (AES-GCM) au moyen d'une
-clé propre à l'utilisateur. Un fichier de sauvegarde récupéré isolément ne peut pas être lu
+<p>Les sauvegardes déposées sur Google&nbsp;Drive et les fichiers de sauvegarde exportés sont
+chiffrés côté navigateur (AES-GCM) au moyen d'une clé propre à chaque compte. Un fichier de sauvegarde récupéré isolément ne peut pas être lu
 sans cette clé ou sa phrase de récupération.</p>
 
 <h2>6. Durée de conservation</h2>
@@ -92,7 +99,8 @@ indiquée au point&nbsp;1.</p>
 <h2>8. Sécurité</h2>
 <p>L'application est distribuée en HTTPS. L'utilisateur est invité à protéger l'accès à sa
 session de navigateur et à son compte Google, qui constituent la première barrière de
-protection des données.</p>
+protection des données. Sur un ordinateur partagé, il utilise « Se déconnecter de ce poste »
+(bouton du compte, en haut de l'écran) et ferme sa session Google dans le navigateur.</p>
 
 <h2>9. Modifications</h2>
 <p>Toute modification de ces règles sera publiée sur cette page, avec mise à jour de la date

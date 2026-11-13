@@ -1,0 +1,9 @@
+# Fichiers de licence de Plan de classe - NE JAMAIS publier sur le depot public.
+# Ils contiennent la source non protegee et la cle de dechiffrement.
+_licence-prive/
+cle-licence-plan-de-classe.txt
+plan-de-classe-source.html
+chargeur.src.js
+chargeur.min.js
+proteger.mjs
+worker-plan-de-classe.js
